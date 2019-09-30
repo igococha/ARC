@@ -3,6 +3,9 @@
 - Introduction to BEAST2 <br>
 https://taming-the-beast.org/tutorials/Introduction-to-BEAST2/
 
+- Divergence Time Estimation using BEAST (FBD-tutorial.pdf)
+https://taming-the-beast.org/tutorials/FBD-tutorial/
+
 - Clade Age tutorial - uses relaxed Clocl log Normal
 https://taming-the-beast.org/tutorials/CladeAge-Tutorial/
 
