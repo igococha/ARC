@@ -1,5 +1,6 @@
 package beast.evolution.substitutionmodel;
 
+
 import java.util.Arrays;
 
 import org.apache.commons.math.MathException;
@@ -31,10 +32,9 @@ import beast.util.Randomizer;
         year = 2019, firstAuthorSurname = "Didelot")
 
 public class ARClockModel extends Base {
-	final public Input<ParametricDistribution> rateDistInput = new Input<>("distr", "the distribution governing the rates among branches. Must have mean of 1. The clock.rate parameter can be used to change the mean rate.", Input.Validate.REQUIRED);
     final public Input<IntegerParameter> categoryInput = new Input<>("rateCategories", "the rate categories associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.REQUIRED);
     final public Input<Integer> numberOfDiscreteRates = new Input<>("numberOfDiscreteRates", "the number of discrete rate categories to approximate the rate distribution by. A value <= 0 will cause the number of categories to be set equal to the number of branches in the tree. (default = -1)", -1);
-    final public Input<RealParameter> rateProbsInput = new Input<>("rateprobs", "the accum probabilities of the rates associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.XOR, categoryInput);
+    final public Input<RealParameter> rateProbsInput = new Input<>("rateProbs", "the accum probabilities of the rates associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.XOR, categoryInput);
     final public Input<Tree> treeInput = new Input<>("tree", "the tree this relaxed clock is associated with.", Input.Validate.REQUIRED);
     final public Input<Boolean> normalizeInput = new Input<>("normalize", "Whether to normalize the average rate (default false).", false);
    
@@ -47,12 +47,10 @@ public class ARClockModel extends Base {
     // either categories or rateProbsParameter is used
     RealParameter rateProbs; //when mode=rates
     IntegerParameter categories; //when mode=categories
-    
-    
-    
-    ContinuousDistribution gammaDist;
-    RealParameter ratesMean = ratesMeanInput.get();
-    RealParameter ratesOmega = ratesOmegaInput.get();
+      
+    //ContinuousDistribution gammaDist;
+    RealParameter ratesMean;
+    RealParameter ratesOmega;
 
     RealParameter meanRate;
     Tree tree;
@@ -81,6 +79,9 @@ public class ARClockModel extends Base {
 		branchCount = nodeCount - 1;
 		categories = categoryInput.get();
 		rateProbs = rateProbsInput.get();
+		
+	    ratesMean = ratesMeanInput.get();
+	    ratesOmega = ratesOmegaInput.get();
         
         if (categories==null) useCategories=true;
         else useCategories = true;
@@ -132,6 +133,12 @@ public class ARClockModel extends Base {
             meanRate = new RealParameter("1.0");
         }
         
+        if (ratesMean == null) {
+        	Log.warning.println("rateMean is null");
+        } else {
+        	Log.warning.println("rateMean :"+ratesMean.getValue());
+        }
+        
         if (Math.abs(ratesMean.getValue()-1.0) > 1e-6 ) { // igor: should this be ONE in ARC's case?
         	Log.warning.println("WARNING: mean of distribution for additive relaxed clock model is not 1.0.");
         }
@@ -159,8 +166,9 @@ public class ARClockModel extends Base {
                 recompute = false;
 			}
         }
-
-        return unscaledBranchRates[getNr(node)] * scaleFactor;	
+		double r = unscaledBranchRates[getNr(node)] * scaleFactor;
+		System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
+        return 1;	
      
 	}
 	
@@ -200,28 +208,34 @@ public class ARClockModel extends Base {
     
     private void calculateUnscaledRatesForCategories() {
     	double rate=1.0;
-    	
+    	ContinuousDistribution gammaDist;
     	for(int i=0; i < tree.getNodeCount();i++) {
     		final Node node = tree.getNode(i);
     		final int nr = getNr(node);
     		if (! node.isRoot()) {   		
     			int category = categories.getValue(nr);
+    			System.out.println("cat = "+category+ " node length="+node.getLength());
+    			System.out.println("mu = "+ratesMean.getValue()+ " omega="+ratesOmega.getValue());
+    			
     			final double beta = node.getLength() / ratesOmega.getValue();
     			final double alpha = ratesMean.getValue() * beta;
     			gammaDist = new GammaDistributionImpl(alpha, beta); 
+    			final double p = (category + 0.5) / numCategories;
+    			System.out.println("alpha = "+alpha+ " beta="+beta+"  p="+p);
     			try {
-    				rate = gammaDist.inverseCumulativeProbability( (category + 0.5) / numCategories );
+    				rate = gammaDist.inverseCumulativeProbability( p );
     			} catch (MathException e) {
     				throw new RuntimeException("Failed to compute inverse cumulative probability");
     			}
     		}
+    		System.out.println(" rate = "+rate);
     		unscaledBranchRates[nr] = rate;
     	}   	
     }
     
     private void calculateUnscaledRatesForRates() {
     	double rate=1.0;
-    	
+    	ContinuousDistribution gammaDist;
     	for(int i=0; i < tree.getNodeCount();i++) {
     		final Node node = tree.getNode(i);
     		final int nr = getNr(node);
