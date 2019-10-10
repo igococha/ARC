@@ -66,7 +66,7 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="10000000"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="5000"> <!--autoOptimize="true" -->
 
         <distribution spec="CompoundDistribution" id="posterior">
             <distribution spec="CompoundDistribution" id="prior">
@@ -114,7 +114,7 @@
         <operator spec='WilsonBalding' weight="1" tree="@tree" />
         <operator spec='UpDownOperator' scaleFactor="0.75" weight="3" down="@tree" /> 
 
-        <logger logEvery="10000" fileName="test.$(seed).log">
+        <logger logEvery="100" fileName="examples/testRelaxed.$(seed).log">
             <model idref='posterior' />
             <log idref="posterior" />
             <log idref="prior" />
@@ -132,7 +132,7 @@
         <!-- <logger logEvery="10000" fileName="test.$(seed).trees">
             <log idref="tree" />
         </logger> -->
-        <logger logEvery="100000">
+        <logger logEvery="10">
             <model idref='posterior' />
             <log idref="posterior" />
             <log idref="coalescent" />

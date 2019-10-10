@@ -63,7 +63,18 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="1000"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="5000"> <!--autoOptimize="true" -->
+		<state>
+            <input name='stateNode' idref='hky.kappa'/>
+            <input name='stateNode' idref='hky.frequencies'/>
+            <input name='stateNode' idref='popSize'/>
+            <input name='stateNode' idref='tree'/>
+            <!--  
+            <input name='stateNode' idref='rateOmega' />
+            -->
+            <input name='stateNode' idref='rateCategories'/>
+        </state>
+
 
         <distribution spec="CompoundDistribution" id="posterior">
             <distribution spec="CompoundDistribution" id="prior">
@@ -77,6 +88,17 @@
                 <distribution id="popSize.prior" spec="beast.math.distributions.Prior" x="@popSize">
                     <distr id="OneOnX" offset="0.0" spec="beast.math.distributions.OneOnX" />
                 </distribution>
+                 <distribution id="rateOmega.prior" spec="beast.math.distributions.Prior" x="@rateOmega">
+                    <distr id="Exponential" mean="0.3333333333333333" spec="beast.math.distributions.Exponential" />
+                </distribution>
+                 <!--
+                 <distribution id="rateOmega.prior" spec="beast.math.distributions.Prior" x="@rateOmega">
+                	<Gamma id="Gamma.0" name="distr">
+                    	<parameter id="rateOmega.alpha" estimate="false" name="alpha">0.5</parameter>
+                    	<parameter id="rateOmega.beta" estimate="false" name="beta">2.0</parameter>
+                	</Gamma>
+                 </distribution>
+                 --> 
                 <!-- 
                 <distribution id="S.prior" spec="beast.math.distributions.Prior" x="@S">
                     <distr id="Exponential" mean="0.3333333333333333" spec="beast.math.distributions.Exponential" />
@@ -99,6 +121,11 @@
             <parameter idref="S" />
         </operator>  
         -->
+        <!--  
+        <operator id='rateOmegaScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3">
+            <parameter idref="rateOmega" />
+        </operator> 
+        -->
         <operator id="CategoriesRandomWalk" spec="IntRandomWalkOperator" windowSize='1' weight="10" parameter="@rateCategories" />
         <operator id='CategoriesSwapOperator' spec='SwapOperator' howMany="1" weight="10" intparameter='@rateCategories' />
         <operator id='CategoriesUniform' spec='UniformOperator' weight="10" parameter='@rateCategories' /> 
@@ -114,7 +141,7 @@
         <operator spec='WilsonBalding' weight="1" tree="@tree" />
         <operator spec='UpDownOperator' scaleFactor="0.75" weight="3" down="@tree" /> 
 
-        <logger logEvery="10" fileName="testARCprob.$(seed).log">
+        <logger logEvery="100" fileName="examples/testARCcat.$(seed).log">
             <model idref='posterior' />
             <log idref="posterior" />
             <log idref="prior" />
@@ -122,13 +149,14 @@
             <log idref="coalescent" />
             <log idref="popSize" />
             <log spec='beast.evolution.tree.TreeHeightLogger' tree='@tree' />
+            <log idref="rateOmega" />
+            <log id='rate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/>
             <log idref="hky.kappa" />
-            <log idref="hky.frequencies" />
             <!--
+            <log idref="hky.frequencies" />
             <log idref="M" />
             <log idref="S" />
             -->
-            <log id='rate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/>
             <log idref="rateCategories" /> 
         </logger>
         <!-- <logger logEvery="10000" fileName="test.$(seed).trees">
@@ -141,6 +169,8 @@
             <log idref="treeLikelihood" />
             <log idref="popSize" />
             <log spec='beast.evolution.tree.TreeHeightLogger' tree='@tree' />
+            <log id='screenrate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/> 
+            <log idref="rateOmega" />
             <log idref="hky.kappa" />
             <log idref="rateCategories" /> 
         </logger>
