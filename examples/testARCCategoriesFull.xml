@@ -65,7 +65,7 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="5000"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="100"> <!--autoOptimize="true" -->
 		<state>
             <input name='stateNode' idref='hky.kappa'/>
             <input name='stateNode' idref='hky.frequencies'/>
@@ -138,33 +138,29 @@
         <operator id='wide' spec='Exchange' isNarrow='false' weight="3" tree="@tree" />
         <operator spec='WilsonBalding' weight="1" tree="@tree" />
         <operator spec='UpDownOperator' scaleFactor="0.75" weight="3" down="@tree" /> 
-
+<!--
         <logger logEvery="100" fileName="examples/testARCcatfull.$(seed).log">
             <model idref='posterior' />
             <log idref="posterior" />
-            <log idref="prior" />
             <log idref="treeLikelihood" />
+            <log idref="prior" />
             <log idref="coalescent" />
             <log idref="popSize" />
             <log spec='beast.evolution.tree.TreeHeightLogger' tree='@tree' />
             <log idref="rateOmega" />
             <log id='rate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/>
             <log idref="hky.kappa" />
-            <!--
-            <log idref="hky.frequencies" />
-            <log idref="M" />
-            <log idref="S" />
-            -->
             <log idref="rateCategories" /> 
         </logger>
+  -->      
         <!-- <logger logEvery="10000" fileName="test.$(seed).trees">
             <log idref="tree" />
         </logger> -->
-        <logger logEvery="10">
+        <logger logEvery="1">
             <model idref='posterior' />
             <log idref="posterior" />
-            <log idref="coalescent" />
             <log idref="treeLikelihood" />
+            <log idref="coalescent" />
             <log idref="popSize" />
             <log spec='beast.evolution.tree.TreeHeightLogger' tree='@tree' />
            <log id='screenrate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/> 

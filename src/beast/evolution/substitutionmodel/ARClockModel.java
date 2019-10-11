@@ -335,6 +335,7 @@ public class ARClockModel extends Base {
 
     @Override
     public void restore() {
+    	System.out.println("restore branches");
     	recompute = true;
         super.restore();
     }
