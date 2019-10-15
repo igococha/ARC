@@ -179,7 +179,8 @@ public class ARClockModel extends Base {
 		synchronized (this) {
     		if (recompute) {
     			calculateUnscaledBranchRates();
-                recalculateScaleFactor();
+    			if (normalize)
+    				recalculateScaleFactor();
                 recompute = false;
 			}
         }
@@ -190,6 +191,7 @@ public class ARClockModel extends Base {
 	}
 	
 	private void recalculateScaleFactor() {
+		System.out.println("recalculate scale factor");
         if (normalize) {
             double timeTotal = 0.0;
             double branchTotal = 0.0;
@@ -215,6 +217,7 @@ public class ARClockModel extends Base {
 	
     
 	private void calculateUnscaledBranchRates() {
+		System.out.println("recalculate branch rates");
 		if (this.useCategories)
 			calculateUnscaledRatesForCategories();
 		else
