@@ -1,4 +1,4 @@
-package beast.evolution.substitutionmodel;
+package beast.evolution.branchratemodel;
 
 
 import java.util.Arrays;
@@ -18,6 +18,7 @@ import beast.evolution.branchratemodel.BranchRateModel.Base;
 import beast.evolution.tree.Node;
 import beast.evolution.tree.Tree;
 import beast.math.distributions.LogNormalDistributionModel;
+import beast.math.distributions.LogNormalDistributionModel.LogNormalImpl;
 import beast.math.distributions.ParametricDistribution;
 import beast.util.Randomizer;
 
@@ -25,7 +26,7 @@ import beast.util.Randomizer;
  * @author Igor Siveroni
  */
 
-@Description("Implements ARC: th Additive Uncorrelated Ralezed Clock Model")
+@Description("Implements ARC: th Additive Uncorrelated Ralexed Clock Model")
 @Citation(value =
         "Didelot X and Volz EM (2019) Additive uncorrelated  relaxed clock models\n" +
                 "  for the dating of epidemiological models.", DOI = "TBC",
@@ -149,25 +150,10 @@ public class ARClockModel extends Base {
         unscaledBranchRates = new double[branchCount];
         
 		// testGamma(9.0, 2.0);
+        // timeDistributions();
 	}
     
-    private void testGamma(double alpha,double beta) {
-    	double k = alpha; 
-    	double theta = 1/beta;
-    	// apache commons implementations corresponds to Gamma(k,theta)
-    	ContinuousDistribution gammaDist = new GammaDistributionImpl(k, theta); 
-    	for (double p=0; p < 1.0; p += 0.1) {
-    		double pinv;
-    		try {
-    			pinv = gammaDist.inverseCumulativeProbability( p );
-    		} catch (Exception e) {
-    			pinv = Double.NaN;
-    		}
-    		System.out.println(p + " --> "+pinv);
-    	}
-    	
-    	
-    }
+ 
 	
 
 	//get the rate for node: R = r*scale*meanRate
@@ -178,6 +164,7 @@ public class ARClockModel extends Base {
         }
 		synchronized (this) {
     		if (recompute) {
+    			System.out.println("recompute...");
     			calculateUnscaledBranchRates();
     			if (normalize)
     				recalculateScaleFactor();
@@ -191,7 +178,7 @@ public class ARClockModel extends Base {
 	}
 	
 	private void recalculateScaleFactor() {
-		System.out.println("recalculate scale factor");
+		//System.out.println("recalculate scale factor");
         if (normalize) {
             double timeTotal = 0.0;
             double branchTotal = 0.0;
@@ -217,7 +204,7 @@ public class ARClockModel extends Base {
 	
     
 	private void calculateUnscaledBranchRates() {
-		System.out.println("recalculate branch rates");
+		//System.out.println("recalculate branch rates");
 		if (this.useCategories)
 			calculateUnscaledRatesForCategories();
 		else
@@ -309,6 +296,7 @@ public class ARClockModel extends Base {
             nodeNr--;
         }
         return nodeNr;
+        
     }
 
     // indexing used by UCRelaxedClock
@@ -324,9 +312,47 @@ public class ARClockModel extends Base {
     // Come back when parameters have settled - so far, recompute always
     @Override
     protected boolean requiresRecalculation() {
-        recompute = true;
+        recompute = false;
         recomputeScaleFactor = true;
+        System.out.println("calling requires recalculation");
+        if (treeInput.get().somethingIsDirty()) {
+        	System.out.println("tree changes");
+        	recompute = true;
+        	//return true;
+        }
+        
+        if (ratesMeanInput.get().isDirtyCalculation()) {
+        	System.out.println("Gamma mu changes");
+        	recompute = true;
+        	//return true;
+        }
+     
+        if (ratesOmegaInput.get().isDirtyCalculation()) {
+        	System.out.println("Gamma omega changes");
+        	recompute = true;
+        	//return true;
+        }
+     
+        if (categoryInput.get() != null && categoryInput.get().somethingIsDirty()) {
+        	System.out.println("category changes");
+        	recompute = true;  // come back to this
+        	//return true;
+        }
+    
+        if (rateProbsInput.get() != null && rateProbsInput.get().somethingIsDirty()) {
+        	System.out.println("rate probs changes");
+        	recompute = true;  // come back to this
+        	//return true;
+        }
+    
 
+        // still don't know the use of this rate
+        if (meanRate.somethingIsDirty()) {
+        	return true;
+        }      
+        if (!recompute)
+        	System.out.println("NO changes");
+        
         return recompute;
     }
     
@@ -343,6 +369,111 @@ public class ARClockModel extends Base {
         super.restore();
     }
    
+    /* piggybacking some tests */
+    
+    private void testGamma(double alpha,double beta) {
+    	double k = alpha; 
+    	double theta = 1/beta;
+    	// apache commons implementations corresponds to Gamma(k,theta)
+    	ContinuousDistribution gammaDist = new GammaDistributionImpl(k, theta); 
+    	for (double p=0; p < 1.0; p += 0.1) {
+    		double pinv;
+    		try {
+    			pinv = gammaDist.inverseCumulativeProbability( p );
+    		} catch (Exception e) {
+    			pinv = Double.NaN;
+    		}
+    		System.out.println(p + " --> "+pinv);
+    	}
+    	  	
+    }
+    
+    private void timeDistributions() {
+    	final int numIter=1000;
+    	final double start=0.1;
+    	final double end=0.9;
+    	final double delta=(end-start)/numIter;
+    	
+    	timeLogNormal(start,end,delta,numIter);
+    	
+    	timeGamma(start,end,delta,numIter);
+    	
+    	timeLogNormal(start,end,delta,numIter);
+    	
+    	timeGamma(start,end,delta,numIter);
+    	
+    	timeLogNormal(start,end,delta,numIter);
+    	
+    	timeGamma(start,end,delta,numIter);
+    	
+    	timeLogNormal(start,end,delta,numIter);
+    	
+    	timeGamma(start,end,delta,numIter);
+    	
+    	timeLogNormal(start,end,delta,numIter);
+    	
+    	timeGamma(start,end,delta,numIter);
+    	
+    	/* time ln = 3/4 time gamma */
+    	
+    }
+    
+    private void timeLogNormal(double start, double end, double delta, int numIter) {
+    	long startTime, endTime, duration;
+    	
+    	LogNormalDistributionModel distLN = new LogNormalDistributionModel();
+    	Double[] M = new Double[1]; M[0] = 1.0;
+    	RealParameter pM = new RealParameter(M);
+    	Double[] S = new Double[1]; S[0] = 0.5;
+    	RealParameter pS = new RealParameter(S);
+    	
+    	distLN.MParameterInput.setValue(pM, distLN);
+    	distLN.SParameterInput.setValue(pS, distLN);
+    	   	
+    	/* LogNormal */	
+    	
+    	startTime = System.nanoTime();
+		  	
+    	double p = start;
+    	for(int i=0; i < numIter; i++) {
+    		try {
+    			final double x = distLN.inverseCumulativeProbability(p);
+    		} catch (Exception e) {
+    			throw new RuntimeException("problem with inverse cum prob");
+    		}
+    		p += delta;
+    	}
+    	
+   	
+		endTime = System.nanoTime();
+		duration = (endTime - startTime)/100000;
+		System.out.println("Time log normal:"+duration);
+    }
+    
+    private void timeGamma(double start, double end, double delta, int numIter) {
+    	long startTime, endTime, duration;
+    	
+    	startTime = System.nanoTime();
+		
+    	GammaDistribution g;
+    	ContinuousDistribution gammaDist = new GammaDistributionImpl(2, 0.5); 
+    	
+    	double p = start;
+    	for(int i=0; i < numIter; i++) {
+    		try {
+    			final double x = gammaDist.inverseCumulativeProbability(p);
+    		} catch (Exception e) {
+    			throw new RuntimeException("problem with inverse cum prob");
+    		}
+    		p += delta;
+    	}
+    	
+   	
+		endTime = System.nanoTime();
+		duration = (endTime - startTime)/100000;
+		System.out.println("Time gamma:"+duration);
+    	
+    }
     
 	
 }

@@ -1,4 +1,4 @@
-package beast.evolution.substitutionmodel;
+package beast.evolution.branchratemodel;
 
 import java.util.Arrays;
 

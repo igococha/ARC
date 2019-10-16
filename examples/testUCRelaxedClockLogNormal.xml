@@ -39,13 +39,13 @@
     </input>
 
 
-    <input spec='UCRelaxedClockModel' id="branchRates">
+    <input spec='UCRelaxedClockModelTest' id="branchRates" numberOfDiscreteRates="-1">
         <!-- <parameter name='mutationRate'>1.0</parameter> -->
         <distr id='lognormal' spec="beast.math.distributions.LogNormalDistributionModel" meanInRealSpace="true">
             <parameter name='M' id='M' value="1" lower="0.0" />
             <parameter name='S' id='S' value="0.3333333333333333" lower="0" />
         </distr>
-        <parameter spec='IntegerParameter' name='rateCategories' id='rateCategories' dimension="11" value="1" />
+        <parameter spec='IntegerParameter' name='rateCategories' id='rateCategories' dimension="1" value="1" />
         <tree idref="tree" />
     </input> 
 
@@ -66,7 +66,17 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="5000"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="100"> <!--autoOptimize="true" -->
+    
+      <state>
+            <input name='stateNode' idref='hky.kappa'/>
+            <input name='stateNode' idref='hky.frequencies'/>
+            <input name='stateNode' idref='popSize'/>
+            <input name='stateNode' idref='tree'/>
+            <input name='stateNode' idref='S' />
+             <input name='stateNode' idref='rateCategories'/>
+        </state>
+      
 
         <distribution spec="CompoundDistribution" id="posterior">
             <distribution spec="CompoundDistribution" id="prior">
@@ -113,7 +123,7 @@
         <operator id='wide' spec='Exchange' isNarrow='false' weight="3" tree="@tree" />
         <operator spec='WilsonBalding' weight="1" tree="@tree" />
         <operator spec='UpDownOperator' scaleFactor="0.75" weight="3" down="@tree" /> 
-
+<!--
         <logger logEvery="100" fileName="examples/testRelaxed.$(seed).log">
             <model idref='posterior' />
             <log idref="posterior" />
@@ -129,10 +139,11 @@
             <log id='rate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/>
             <log idref="rateCategories" /> 
         </logger>
+ -->       
         <!-- <logger logEvery="10000" fileName="test.$(seed).trees">
             <log idref="tree" />
         </logger> -->
-        <logger logEvery="10">
+        <logger logEvery="1">
             <model idref='posterior' />
             <log idref="posterior" />
             <log idref="coalescent" />
