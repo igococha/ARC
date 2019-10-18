@@ -63,11 +63,14 @@ public class ARClockModel extends Base {
     
     
     private boolean recompute = true;
+    private boolean categoriesOnly = false;
     
-    // state that we might want to store/restore
     
-    double[] unscaledBranchRates;
-    double[] storedUnscaledBranchRates;
+    private boolean treeOnly = false;
+    private double[] branchLengths; // accessed with nr
+    
+    double[] rates;
+    double[] storedRates;
     
     private boolean recomputeScaleFactor = true;
     private double scaleFactor = 1.0; 
@@ -147,8 +150,12 @@ public class ARClockModel extends Base {
        
         // new
         // unscaledBranchRates = new double[tree.getNodeCount()];
-        unscaledBranchRates = new double[branchCount];
-        
+        rates = new double[branchCount];
+        storedRates = new double[branchCount];
+        branchLengths = new double[branchCount];
+        for(int i=0; i < branchCount; i++) {
+        	branchLengths[i]=-1;
+        }
 		// testGamma(9.0, 2.0);
         // timeDistributions();
 	}
@@ -159,20 +166,29 @@ public class ARClockModel extends Base {
 	//get the rate for node: R = r*scale*meanRate
 	@Override
 	public double getRateForBranch(Node node) {
+		System.out.println("Getting branch");
 		if (node.isRoot()) {
+			System.out.println("root");
             return 1; // root has no rate
         }
 		synchronized (this) {
     		if (recompute) {
-    			System.out.println("recompute...");
+    			//if (categoriesOnly)
+    			//	System.out.println("categories only...");
+    			if (treeOnly)
+    				System.out.println("tree only...");
+    			
+    			//treeOnly=false;
+    			//System.out.println("recompute...");
     			calculateUnscaledBranchRates();
     			if (normalize)
     				recalculateScaleFactor();
                 recompute = false;
 			}
         }
-		double r = unscaledBranchRates[getNr(node)] * scaleFactor;
+		double r = rates[getNr(node)] * scaleFactor;
 		//System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
+		if (!node.isRoot()) throw new RuntimeException("get rates");
         return 1;	
      
 	}
@@ -187,7 +203,7 @@ public class ARClockModel extends Base {
                 Node node = tree.getNode(i);
                 if (!node.isRoot()) {
                     double branchInTime = node.getLength();
-                    double branchLength = branchInTime * unscaledBranchRates[node.getNr()];
+                    double branchLength = branchInTime * rates[node.getNr()];
                     timeTotal += branchInTime;
                     branchTotal += branchLength;
                 }
@@ -204,15 +220,17 @@ public class ARClockModel extends Base {
 	
     
 	private void calculateUnscaledBranchRates() {
-		//System.out.println("recalculate branch rates");
-		if (this.useCategories)
-			calculateUnscaledRatesForCategories();
-		else
-			calculateUnscaledRatesForRates();
-		// debugPost();
+		System.out.println("recalculate branch rates");
+		//debugState();
+		debugTree();
+		if (this.useCategories) {
+			calculateRatesForCategories();
+		} else {
+			calculateRatesForRates();
+		}
 	}
     
-	void debugPost() {
+	void debugState() {
 		//System.out.println(tree.getRoot().getNr()+ " =? " + (this.nodeCount-1));
 		if (tree.getRoot().getNr() != (nodeCount-1)) {
 			System.out.println("Root Swap!!");
@@ -234,20 +252,34 @@ public class ARClockModel extends Base {
 			System.out.println(" ");
 		}
 	}
+	
+	void debugTree() {
+		for(int i=0; i < tree.getNodeCount();i++) {
+    		final Node node = tree.getNode(i);
+    		System.out.print(node.getNr()+"/"+String.format("%.3f", node.getLength())+" ");
+		}
+		System.out.println("");
+	}
     
     
-    private void calculateUnscaledRatesForCategories() {
+    private void calculateRatesForCategories() {
+    	
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
     	for(int i=0; i < tree.getNodeCount();i++) {
     		final Node node = tree.getNode(i);
-    		if (! node.isRoot()) { 
+    		if (! node.isRoot()) {   			
     			final int nr = getNr(node);
-    			int category = categories.getValue(nr);
-    			//System.out.println("cat = "+category+ " node length="+node.getLength());
-    			//System.out.println("mu = "+ratesMean.getValue()+ " omega="+ratesOmega.getValue());
+    			if (categoriesOnly && !categories.isDirty(nr)) {
+    				continue;
+    			}
+    			if (treeOnly && node.isDirty()!=Tree.IS_CLEAN) {
+    				System.out.println("nr = "+nr+" l ="+node.getLength());
+    			}
+    			final int category = categories.getValue(nr);
+    			final double l = node.getLength();
     			
-    			final double theta = ratesOmega.getValue() /  node.getLength()   ;
+    			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
     			gammaDist = new GammaDistributionImpl(k, theta); 
     			final double p = (category + 0.5) / numCategories;
@@ -257,14 +289,18 @@ public class ARClockModel extends Base {
     			} catch (MathException e) {
     				throw new RuntimeException("Failed to compute inverse cumulative probability");
     			}
-    			unscaledBranchRates[nr] = rate;
+    			rates[nr] = rate;
     			
     		}
     		// System.out.println(" rate = "+rate);
-    	}   	
+    	}
+    	if (this.recompute)
+    		throw new RuntimeException("end of cal rates");
+    	categoriesOnly=false;
+    	treeOnly = false;
     }
     
-    private void calculateUnscaledRatesForRates() {
+    private void calculateRatesForRates() {
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
     	for(int i=0; i < tree.getNodeCount();i++) {
@@ -280,7 +316,7 @@ public class ARClockModel extends Base {
     	        } catch (MathException e) {
     	        	throw new RuntimeException("Failed to compute inverse cumulative probability");
     	        }
-    	        unscaledBranchRates[nr] = rate;
+    	        rates[nr] = rate;
     		}
     	}   	
     }
@@ -314,33 +350,43 @@ public class ARClockModel extends Base {
     protected boolean requiresRecalculation() {
         recompute = false;
         recomputeScaleFactor = true;
-        System.out.println("calling requires recalculation");
+        categoriesOnly=true;
+        treeOnly= true;
+        //System.out.println("calling requires recalculation");
         if (treeInput.get().somethingIsDirty()) {
-        	System.out.println("tree changes");
+        	//System.out.println("tree changes");
+        	categoriesOnly=false;
         	recompute = true;
         	//return true;
         }
         
         if (ratesMeanInput.get().isDirtyCalculation()) {
-        	System.out.println("Gamma mu changes");
+        	//System.out.println("Gamma mu changes");
+        	categoriesOnly=false;
+        	treeOnly=false;
         	recompute = true;
         	//return true;
         }
      
         if (ratesOmegaInput.get().isDirtyCalculation()) {
-        	System.out.println("Gamma omega changes");
+        	//System.out.println("Gamma omega changes");
+        	categoriesOnly=false;
+        	treeOnly=false;
         	recompute = true;
         	//return true;
         }
      
         if (categoryInput.get() != null && categoryInput.get().somethingIsDirty()) {
-        	System.out.println("category changes");
+        	//System.out.println("category changes");
+        	treeOnly=false;
         	recompute = true;  // come back to this
         	//return true;
         }
     
         if (rateProbsInput.get() != null && rateProbsInput.get().somethingIsDirty()) {
-        	System.out.println("rate probs changes");
+        	//System.out.println("rate probs changes");
+        	categoriesOnly=false;
+        	treeOnly=false;
         	recompute = true;  // come back to this
         	//return true;
         }
@@ -358,14 +404,18 @@ public class ARClockModel extends Base {
     
     @Override
     public void store() {
-    	recompute = true;
+    	System.arraycopy(rates, 0, storedRates, 0, rates.length);
+    	storedScaleFactor = scaleFactor;
         super.store();
     }
 
     @Override
     public void restore() {
-    	System.out.println("restore branches");
-    	recompute = true;
+    	//System.out.println("restore branches");
+    	double[] tmp = rates;
+        rates = storedRates;
+        storedRates = tmp;
+        scaleFactor = storedScaleFactor;
         super.restore();
     }
    
