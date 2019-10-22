@@ -66,7 +66,7 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="100"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="1000"> <!--autoOptimize="true" -->
     
       <state>
             <input name='stateNode' idref='hky.kappa'/>
@@ -143,7 +143,7 @@
         <!-- <logger logEvery="10000" fileName="test.$(seed).trees">
             <log idref="tree" />
         </logger> -->
-        <logger logEvery="1">
+        <logger logEvery="100">
             <model idref='posterior' />
             <log idref="posterior" />
             <log idref="coalescent" />

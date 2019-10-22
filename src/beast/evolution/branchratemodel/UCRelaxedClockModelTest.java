@@ -66,6 +66,9 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
     private double scaleFactor = 1.0; //initial
     private double storedScaleFactor = 1.0; //initial
     int LATTICE_SIZE_FOR_DISCRETIZED_RATES = 100;//
+    
+    int numCalls=0;
+    private long startTime, endTime, duration;
 
     @Override
     public void initAndValidate() {
@@ -185,12 +188,16 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
     //get the rate for node
     //R=r*scale*meanRate
     public double getRateForBranch(Node node) {
+    	
+    	startTime();
+    	
         if (node.isRoot()) {
             // root has no rate
+        	endTime(false);
             return 1;
         }
         if (recompute) {
-        	System.out.println("Recompute...");
+        	//System.out.println("Recompute...");
             // this must be synchronized to avoid being called simultaneously by
             // two different likelihood threads
             synchronized (this) {
@@ -206,6 +213,9 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
             }
             renormalize = false;
         }
+        
+        endTime(false);
+        
         return getRawRate(node) * scaleFactor * meanRate.getValue();
     }
 
@@ -255,6 +265,7 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
         int category = categories.getValue(nodeNumber);
         if (rates[category] == 0.0) {
             try {
+            	numCalls++;
                 rates[category] = distribution.inverseCumulativeProbability((category + 0.5) / rates.length);
             } catch (MathException e) {
                 throw new RuntimeException("Failed to compute inverse cumulative probability!");
@@ -296,13 +307,13 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
 //        }
         // rateDistInput cannot be dirty?!?
         if (rateDistInput.get().isDirtyCalculation()) {
-        	System.out.println("distribution changes");
+        	//System.out.println("distribution changes");
             recompute = true;
             return true;
         }
         // NOT processed as trait on the tree, so DO mark as dirty
         if (categoryInput.get() != null && categoryInput.get().somethingIsDirty()) {
-        	System.out.println("category changes");
+        	//System.out.println("category changes");
             //recompute = true;
             return true;
         }
@@ -332,11 +343,12 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
         }
         storedScaleFactor = scaleFactor;
         super.store();
+        System.out.println("num calls="+numCalls+"  duration="+duration);
     }
 
     @Override
     public void restore() {
-    	System.out.println("restore");
+    	//System.out.println("restore");
         if(mode == Mode.categories){
             double[] tmp = rates;
             rates = storedRates;
@@ -344,6 +356,19 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
         }
         scaleFactor = storedScaleFactor;
         super.restore();
+    }
+    
+    
+    private void startTime() {
+    	startTime = System.nanoTime();
+    }
+    
+    private void endTime(boolean reset) {
+    	endTime = System.nanoTime();
+    	if (reset)
+    		duration = (endTime - startTime)/100;
+    	else
+    		duration += (endTime - startTime)/100;
     }
 
 
