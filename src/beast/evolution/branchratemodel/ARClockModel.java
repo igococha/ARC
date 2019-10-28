@@ -177,6 +177,7 @@ public class ARClockModel extends Base {
 		//System.out.println("Getting branch");
 		if (node.isRoot()) {
 			//System.out.println("root");
+			endTime(false);
             return 1; // root has no rate
         }
 		synchronized (this) {
@@ -267,6 +268,7 @@ public class ARClockModel extends Base {
     	
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
+    	//tree.getNodesAsArray();
     	for(int i=0; i < tree.getNodeCount();i++) {
     		final Node node = tree.getNode(i);
     		if (! node.isRoot()) {   			
@@ -289,7 +291,7 @@ public class ARClockModel extends Base {
     			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
     			gammaDist = new GammaDistributionImpl(k, theta); 
-    			final double p = (categorr  + 0.5) / numCategories;
+    			final double p = (category  + 0.5) / numCategories;
     			branchLengths[node.getNr()] = l;
     			numCalls++;
     			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
@@ -413,7 +415,7 @@ public class ARClockModel extends Base {
     @Override
     public void store() {
     	System.arraycopy(rates, 0, storedRates, 0, rates.length);
-    	//System.arraycopy(branchLengths, 0, branchLengths, 0, branchLengths.length);
+    	System.arraycopy(branchLengths, 0, branchLengths, 0, branchLengths.length);
     	storedScaleFactor = scaleFactor;
         super.store();
         System.out.println("num calls="+numCalls+"  duration="+duration);
@@ -425,9 +427,9 @@ public class ARClockModel extends Base {
     	double[] tmp = rates;
         rates = storedRates;
         storedRates = tmp;
-        //tmp = branchLengths;
-        //branchLengths = storedBranchLengths;
-        //storedBranchLengths = tmp;
+        tmp = branchLengths;
+        branchLengths = storedBranchLengths;
+        storedBranchLengths = tmp;
         scaleFactor = storedScaleFactor;
         super.restore();
     }

@@ -343,7 +343,7 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
         }
         storedScaleFactor = scaleFactor;
         super.store();
-        System.out.println("num calls="+numCalls+"  duration="+duration);
+        System.out.println("num calls="+numCalls+"  duration="+duration/1000);
     }
 
     @Override
@@ -366,9 +366,9 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
     private void endTime(boolean reset) {
     	endTime = System.nanoTime();
     	if (reset)
-    		duration = (endTime - startTime)/100;
+    		duration = (endTime - startTime);
     	else
-    		duration += (endTime - startTime)/100;
+    		duration += (endTime - startTime);
     }
 
 
