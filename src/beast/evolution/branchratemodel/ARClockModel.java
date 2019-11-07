@@ -163,7 +163,7 @@ public class ARClockModel extends Base {
         for(int i=0; i < nodeCount; i++) {
         	branchLengths[i]=-1;
         }
-		// testGamma(9.0, 2.0);
+		testGamma(0.020132723470917546, 1/ 49.67037874654845 );
         //timeDistributions();
 	}
     
@@ -173,60 +173,40 @@ public class ARClockModel extends Base {
 	//get the rate for node: R = r*scale*meanRate
 	@Override
 	public double getRateForBranch(Node node) {
-		startTime();
-		//System.out.println("Getting branch");
+		//startTime();
+		
 		if (node.isRoot()) {
-			//System.out.println("root");
-			endTime(false);
+			//endTime(false);
             return 1; // root has no rate
         }
 		synchronized (this) {
     		if (recompute) {
     			calculateUnscaledBranchRates();
-    			if (normalize)
-    				recalculateScaleFactor();
+    			//if (normalize)
+    			// recalculateScaleFactor();
     			recompute = false;
 			}
         }
-		double r = rates[getNr(node)] * scaleFactor;
-		//System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
-		endTime(false);
-        return 1;	
+		double r = rates[getNr(node)];
+		System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
+		//endTime(false);
+        return r;	
      
 	}
 	
-	private void recalculateScaleFactor() {
-		System.out.println("recalculate scale factor");
-        if (normalize) {
-            double timeTotal = 0.0;
-            double branchTotal = 0.0;
-
-            for (int i = 0; i < tree.getNodeCount(); i++) {
-                Node node = tree.getNode(i);
-                if (!node.isRoot()) {
-                    double branchInTime = node.getLength();
-                    double branchLength = branchInTime * rates[node.getNr()];
-                    timeTotal += branchInTime;
-                    branchTotal += branchLength;
-                }
-            }
-
-            scaleFactor = timeTotal / branchTotal;
-
-            scaleFactor *= meanRate.getValue();
-        } else {
-            scaleFactor = 1.0;
-        }
-        // scaleFactor *= meanRate.getValue();
-    }
 	
-    
 	private void calculateUnscaledBranchRates() {
 		//System.out.println("recalculate branch rates");
 		//debugState();
 		//debugTree();
 		if (this.useCategories) {
-			calculateRatesForCategories();
+			calculateR4C();
+			//if (this.categoriesOnly)
+			//	calculateR4CCatOnly();
+			//else if (this.treeOnly)
+			//	calculateR4CTreeOnly();
+			//else
+			//	calculateR4C();
 		} else {
 			calculateRatesForRates();
 		}
@@ -263,9 +243,116 @@ public class ARClockModel extends Base {
 		System.out.println("");
 	}
     
+	private void calculateR4C() {
+		double rate=1.0;
+    	ContinuousDistribution gammaDist;
+    	//tree.getNodesAsArray();
+    	for(int i=0; i < tree.getNodeCount();i++) {
+    		final Node node = tree.getNode(i);
+    		if (! node.isRoot()) {   			
+    			final int nr = getNr(node);
+    			final double l = node.getLength();  
+    			final int category = categories.getValue(nr);			
+    			final double theta = ratesOmega.getValue() /  l  ;
+    			final double k = ratesMean.getValue() / theta;
+    			gammaDist = new GammaDistributionImpl(k, theta); 
+    			final double p = (category  + 0.5) / numCategories;
+    			branchLengths[node.getNr()] = l;
+    			numCalls++;
+    			System.out.println("l="+l+" k = "+k+ " theta="+theta+"  p="+p);
+    			try {
+    				rate = gammaDist.inverseCumulativeProbability( p );
+    			} catch (MathException e) {
+    				throw new RuntimeException("Failed to compute inverse cumulative probability");
+    			}
+    			rates[nr] = rate;  			
+    		} else {  // node is root
+    			branchLengths[node.getNr()] = node.getLength(); 
+    		}
+    		// System.out.println(" rate = "+rate);
+    	}
+    	categoriesOnly=false;
+    	treeOnly = false;
+	}
+	
+	private void calculateR4CCatOnly() {
+		double rate=1.0;
+    	ContinuousDistribution gammaDist;
+    	//tree.getNodesAsArray();
+    	for(int i=0; i < tree.getNodeCount();i++) {
+    		final Node node = tree.getNode(i);
+    		if (! node.isRoot()) {   			
+    			final int nr = getNr(node);
+    			if (!categories.isDirty(nr)) {
+    				continue;
+    			}
+    			final double l = node.getLength();  
+    			final int category = categories.getValue(nr);			
+    			final double theta = ratesOmega.getValue() /  l  ;
+    			final double k = ratesMean.getValue() / theta;
+    			gammaDist = new GammaDistributionImpl(k, theta); 
+    			final double p = (category  + 0.5) / numCategories;
+    			branchLengths[node.getNr()] = l;
+    			numCalls++;
+    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
+    			try {
+    				rate = gammaDist.inverseCumulativeProbability( p );
+    			} catch (MathException e) {
+    				throw new RuntimeException("Failed to compute inverse cumulative probability");
+    			}
+    			rates[nr] = rate;  			
+    		} else {  // node is root
+    			branchLengths[node.getNr()] = node.getLength(); 
+    		}
+    		// System.out.println(" rate = "+rate);
+    	}
+    	categoriesOnly=false;
+    	treeOnly=false;
+	}
+
+	private void calculateR4CTreeOnly() {
+		double rate=1.0;
+    	ContinuousDistribution gammaDist;
+    	//tree.getNodesAsArray();
+    	for(int i=0; i < tree.getNodeCount();i++) {
+    		final Node node = tree.getNode(i);
+    		if (! node.isRoot()) {   			
+    			final int nr = getNr(node);
+    			final double l = node.getLength();  
+    			// tree only
+    			// it seems that checking for node.isDirty==Tree.IS_CLEAN is not enough
+    			final double diff = l - branchLengths[node.getNr()];
+    			final boolean isDiff = Math.abs(diff) > 0.00001;
+    			if (!isDiff) {
+    				continue;
+    				//System.out.println("skip node");
+    			}
+    			//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
+    			
+    			final int category = categories.getValue(nr);			
+    			final double theta = ratesOmega.getValue() /  l  ;
+    			final double k = ratesMean.getValue() / theta;
+    			gammaDist = new GammaDistributionImpl(k, theta); 
+    			final double p = (category  + 0.5) / numCategories;
+    			branchLengths[node.getNr()] = l;
+    			numCalls++;
+    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
+    			try {
+    				rate = gammaDist.inverseCumulativeProbability( p );
+    			} catch (MathException e) {
+    				throw new RuntimeException("Failed to compute inverse cumulative probability");
+    			}
+    			rates[nr] = rate;  			
+    		} else {  // node is root
+    			branchLengths[node.getNr()] = node.getLength(); 
+    		}
+    		// System.out.println(" rate = "+rate);
+    	}
+    	categoriesOnly=false;
+    	treeOnly = false;
+	}
     
-    private void calculateRatesForCategories() {
-    	
+    private void calculateRatesForCategories() {   	
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
     	//tree.getNodesAsArray();
@@ -309,6 +396,8 @@ public class ARClockModel extends Base {
     	categoriesOnly=false;
     	treeOnly = false;
     }
+    
+    
     
     private void calculateRatesForRates() {
     	double rate=1.0;
@@ -418,7 +507,7 @@ public class ARClockModel extends Base {
     	System.arraycopy(branchLengths, 0, branchLengths, 0, branchLengths.length);
     	storedScaleFactor = scaleFactor;
         super.store();
-        System.out.println("num calls="+numCalls+"  duration="+duration);
+        // System.out.println("num calls="+numCalls+"  duration="+duration);
     }
 
     @Override
