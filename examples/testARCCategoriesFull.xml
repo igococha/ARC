@@ -44,7 +44,7 @@
     <input spec='ARClockModel' id="branchRates" numberOfDiscreteRates="12">    
         <parameter spec='IntegerParameter' name='rateCategories' id='rateCategories' dimension="11" value="1" />
 		<parameter name='rateMean' id='rateMean' value="1"  />
-		<parameter name='rateOmega' id='rateOmega' value="1"  />
+		<parameter name='rateOmega' id='rateOmega' value="0.1"  lower="0.01" upper="0.2"/>
 		<tree idref="tree" />
     </input> 
 
@@ -65,7 +65,7 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="1000"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="4820"> <!--autoOptimize="true" -->
 		<state>
             <input name='stateNode' idref='hky.kappa'/>
             <input name='stateNode' idref='hky.frequencies'/>
@@ -95,8 +95,8 @@
                 -->
                  <distribution id="rateOmega.prior" spec="beast.math.distributions.Prior" x="@rateOmega">
                 	<Gamma id="Gamma.0" name="distr">
-                    	<parameter id="rateOmega.alpha" estimate="false" name="alpha">0.5</parameter>
-                    	<parameter id="rateOmega.beta" estimate="false" name="beta">2.0</parameter>
+                    	<parameter id="rateOmega.alpha" estimate="false" name="alpha">0.1</parameter>
+                    	<parameter id="rateOmega.beta" estimate="false" name="beta">1.0</parameter>
                 	</Gamma>
                  </distribution>               
                 <!-- 
@@ -153,18 +153,18 @@
             <log idref="rateCategories" /> 
         </logger>
   -->      
-        <!-- <logger logEvery="10000" fileName="test.$(seed).trees">
+        <!-- <logger logEvery="100" fileName="test.$(seed).trees">
             <log idref="tree" />
         </logger> -->
-        <logger logEvery="100">
+        <logger logEvery="1">
+            <log idref="rateOmega" />
             <model idref='posterior' />
             <log idref="posterior" />
             <log idref="treeLikelihood" />
             <log idref="coalescent" />
             <log idref="popSize" />
             <log spec='beast.evolution.tree.TreeHeightLogger' tree='@tree' />
-           <log id='screenrate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/> 
-            <log idref="rateOmega" />
+           <log id='screenrate' spec='RateStatistic' tree='@tree' branchratemodel='@branchRates'/>             
             <log idref="hky.kappa" />
             <log idref="rateCategories" /> 
         </logger>

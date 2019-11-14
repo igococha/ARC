@@ -271,6 +271,7 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
                 throw new RuntimeException("Failed to compute inverse cumulative probability!");
             }
         }
+        //System.out.println("rate="+rates[category]);
         return rates[category];
     }
     // when mode=quantiles
@@ -343,7 +344,7 @@ public class UCRelaxedClockModelTest extends BranchRateModel.Base {
         }
         storedScaleFactor = scaleFactor;
         super.store();
-        System.out.println("num calls="+numCalls+"  duration="+duration/1000);
+        // System.out.println("num calls="+numCalls+"  duration="+duration/1000);
     }
 
     @Override

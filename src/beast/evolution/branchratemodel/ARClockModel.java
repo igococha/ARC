@@ -163,7 +163,7 @@ public class ARClockModel extends Base {
         for(int i=0; i < nodeCount; i++) {
         	branchLengths[i]=-1;
         }
-		testGamma(0.020132723470917546, 1/ 49.67037874654845 );
+		//testGamma(0.020132723470917546, 1/ 49.67037874654845 );
         //timeDistributions();
 	}
     
@@ -188,7 +188,7 @@ public class ARClockModel extends Base {
 			}
         }
 		double r = rates[getNr(node)];
-		System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
+		//System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
 		//endTime(false);
         return r;	
      
@@ -200,7 +200,8 @@ public class ARClockModel extends Base {
 		//debugState();
 		//debugTree();
 		if (this.useCategories) {
-			calculateR4C();
+			calculateRatesForCategories();
+			//calculateR4C();
 			//if (this.categoriesOnly)
 			//	calculateR4CCatOnly();
 			//else if (this.treeOnly)
@@ -244,6 +245,7 @@ public class ARClockModel extends Base {
 	}
     
 	private void calculateR4C() {
+		//System.out.println("caluclate rates");
 		double rate=1.0;
     	ContinuousDistribution gammaDist;
     	//tree.getNodesAsArray();
@@ -258,13 +260,13 @@ public class ARClockModel extends Base {
     			gammaDist = new GammaDistributionImpl(k, theta); 
     			final double p = (category  + 0.5) / numCategories;
     			branchLengths[node.getNr()] = l;
-    			numCalls++;
-    			System.out.println("l="+l+" k = "+k+ " theta="+theta+"  p="+p);
+    			numCalls++; 			
     			try {
     				rate = gammaDist.inverseCumulativeProbability( p );
     			} catch (MathException e) {
     				throw new RuntimeException("Failed to compute inverse cumulative probability");
     			}
+    			//System.out.println("rate="+rate+" l="+l+" k = "+k+ " theta="+theta+"  p="+p);
     			rates[nr] = rate;  			
     		} else {  // node is root
     			branchLengths[node.getNr()] = node.getLength(); 
@@ -273,6 +275,7 @@ public class ARClockModel extends Base {
     	}
     	categoriesOnly=false;
     	treeOnly = false;
+    	recompute=false;
 	}
 	
 	private void calculateR4CCatOnly() {
@@ -311,6 +314,7 @@ public class ARClockModel extends Base {
 	}
 
 	private void calculateR4CTreeOnly() {
+		System.out.println("tree only");
 		double rate=1.0;
     	ContinuousDistribution gammaDist;
     	//tree.getNodesAsArray();
@@ -352,6 +356,7 @@ public class ARClockModel extends Base {
     	treeOnly = false;
 	}
     
+	// includes all optimisations in a single function
     private void calculateRatesForCategories() {   	
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
@@ -364,16 +369,20 @@ public class ARClockModel extends Base {
     				continue;
     			}
     			final double l = node.getLength();  
+    			
+    			/*
     			if (treeOnly) {
-    				// it seems that checking for node.isDirty==Tree.IS_CLEAN is not enough
+    				// it seems that checking for node.isDirty() ==Tree.IS_CLEAN is not enough
     				final double diff = l - branchLengths[node.getNr()];
-    				final boolean isDiff = Math.abs(diff) > 0.00001;
+    				final boolean isDiff = Math.abs(diff) > 0.00000000001;
     				if (!isDiff) {
     					continue;
-    					//System.out.println("skip node");
     				}
     				//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
     			}
+    			*/
+    			
+    			
     			final int category = categories.getValue(nr);			
     			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
@@ -427,7 +436,7 @@ public class ARClockModel extends Base {
     private int getNr(Node node) {
         int nodeNr = node.getNr();
         if (nodeNr > tree.getRoot().getNr()) {
-        	System.out.println("-- if root swap");
+        	System.out.println("-- root swap");
             nodeNr--;
         }
         return nodeNr;
@@ -467,7 +476,8 @@ public class ARClockModel extends Base {
         	//return true;
         }
      
-        if (ratesOmegaInput.get().isDirtyCalculation()) {
+        //System.out.println("omega="+ratesOmegaInput.get().getArrayValue());
+        if (ratesOmegaInput.get().somethingIsDirty()) {
         	//System.out.println("Gamma omega changes");
         	categoriesOnly=false;
         	treeOnly=false;
@@ -490,14 +500,14 @@ public class ARClockModel extends Base {
         	//return true;
         }
     
-
+        // added to test likelihood incorrectly calculated error
+        //recompute=true;
+        
         // still don't know the use of this rate
         if (meanRate.somethingIsDirty()) {
         	return true;
-        }     
-        
-       
-        
+        }           
+        //System.out.println("recompute:"+recompute);
         return recompute;
     }
     
@@ -512,10 +522,11 @@ public class ARClockModel extends Base {
 
     @Override
     public void restore() {
-    	//System.out.println("restore branches");
+    	//System.out.println("--- restore ARC");
     	double[] tmp = rates;
         rates = storedRates;
         storedRates = tmp;
+        // restore branchLengths
         tmp = branchLengths;
         branchLengths = storedBranchLengths;
         storedBranchLengths = tmp;
