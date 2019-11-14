@@ -23,6 +23,7 @@ import beast.math.distributions.LogNormalDistributionModel;
 import beast.math.distributions.LogNormalDistributionModel.LogNormalImpl;
 import beast.math.distributions.ParametricDistribution;
 import beast.util.Randomizer;
+import util.DistTest;
 
 /**
  * @author Igor Siveroni
@@ -80,7 +81,7 @@ public class ARClockModel extends Base {
     private double storedScaleFactor = 1.0;
     
     private int numCalls=0;
-    private long startTime, endTime, duration;
+    
     
 
     @Override
@@ -164,7 +165,8 @@ public class ARClockModel extends Base {
         	branchLengths[i]=-1;
         }
 		//testGamma(0.020132723470917546, 1/ 49.67037874654845 );
-        //timeDistributions();
+        //DistTest.timeDistributions();
+      
 	}
     
  
@@ -244,120 +246,14 @@ public class ARClockModel extends Base {
 		System.out.println("");
 	}
     
-	private void calculateR4C() {
-		//System.out.println("caluclate rates");
-		double rate=1.0;
-    	ContinuousDistribution gammaDist;
-    	//tree.getNodesAsArray();
-    	for(int i=0; i < tree.getNodeCount();i++) {
-    		final Node node = tree.getNode(i);
-    		if (! node.isRoot()) {   			
-    			final int nr = getNr(node);
-    			final double l = node.getLength();  
-    			final int category = categories.getValue(nr);			
-    			final double theta = ratesOmega.getValue() /  l  ;
-    			final double k = ratesMean.getValue() / theta;
-    			gammaDist = new GammaDistributionImpl(k, theta); 
-    			final double p = (category  + 0.5) / numCategories;
-    			branchLengths[node.getNr()] = l;
-    			numCalls++; 			
-    			try {
-    				rate = gammaDist.inverseCumulativeProbability( p );
-    			} catch (MathException e) {
-    				throw new RuntimeException("Failed to compute inverse cumulative probability");
-    			}
-    			//System.out.println("rate="+rate+" l="+l+" k = "+k+ " theta="+theta+"  p="+p);
-    			rates[nr] = rate;  			
-    		} else {  // node is root
-    			branchLengths[node.getNr()] = node.getLength(); 
-    		}
-    		// System.out.println(" rate = "+rate);
-    	}
-    	categoriesOnly=false;
-    	treeOnly = false;
-    	recompute=false;
-	}
 	
-	private void calculateR4CCatOnly() {
-		double rate=1.0;
-    	ContinuousDistribution gammaDist;
-    	//tree.getNodesAsArray();
-    	for(int i=0; i < tree.getNodeCount();i++) {
-    		final Node node = tree.getNode(i);
-    		if (! node.isRoot()) {   			
-    			final int nr = getNr(node);
-    			if (!categories.isDirty(nr)) {
-    				continue;
-    			}
-    			final double l = node.getLength();  
-    			final int category = categories.getValue(nr);			
-    			final double theta = ratesOmega.getValue() /  l  ;
-    			final double k = ratesMean.getValue() / theta;
-    			gammaDist = new GammaDistributionImpl(k, theta); 
-    			final double p = (category  + 0.5) / numCategories;
-    			branchLengths[node.getNr()] = l;
-    			numCalls++;
-    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
-    			try {
-    				rate = gammaDist.inverseCumulativeProbability( p );
-    			} catch (MathException e) {
-    				throw new RuntimeException("Failed to compute inverse cumulative probability");
-    			}
-    			rates[nr] = rate;  			
-    		} else {  // node is root
-    			branchLengths[node.getNr()] = node.getLength(); 
-    		}
-    		// System.out.println(" rate = "+rate);
-    	}
-    	categoriesOnly=false;
-    	treeOnly=false;
-	}
+	
+	
 
-	private void calculateR4CTreeOnly() {
-		System.out.println("tree only");
-		double rate=1.0;
-    	ContinuousDistribution gammaDist;
-    	//tree.getNodesAsArray();
-    	for(int i=0; i < tree.getNodeCount();i++) {
-    		final Node node = tree.getNode(i);
-    		if (! node.isRoot()) {   			
-    			final int nr = getNr(node);
-    			final double l = node.getLength();  
-    			// tree only
-    			// it seems that checking for node.isDirty==Tree.IS_CLEAN is not enough
-    			final double diff = l - branchLengths[node.getNr()];
-    			final boolean isDiff = Math.abs(diff) > 0.00001;
-    			if (!isDiff) {
-    				continue;
-    				//System.out.println("skip node");
-    			}
-    			//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
-    			
-    			final int category = categories.getValue(nr);			
-    			final double theta = ratesOmega.getValue() /  l  ;
-    			final double k = ratesMean.getValue() / theta;
-    			gammaDist = new GammaDistributionImpl(k, theta); 
-    			final double p = (category  + 0.5) / numCategories;
-    			branchLengths[node.getNr()] = l;
-    			numCalls++;
-    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
-    			try {
-    				rate = gammaDist.inverseCumulativeProbability( p );
-    			} catch (MathException e) {
-    				throw new RuntimeException("Failed to compute inverse cumulative probability");
-    			}
-    			rates[nr] = rate;  			
-    		} else {  // node is root
-    			branchLengths[node.getNr()] = node.getLength(); 
-    		}
-    		// System.out.println(" rate = "+rate);
-    	}
-    	categoriesOnly=false;
-    	treeOnly = false;
-	}
-    
+	
 	// includes all optimisations in a single function
     private void calculateRatesForCategories() {   	
+    	
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
     	//tree.getNodesAsArray();
@@ -370,19 +266,18 @@ public class ARClockModel extends Base {
     			}
     			final double l = node.getLength();  
     			
-    			/*
+    			
     			if (treeOnly) {
     				// it seems that checking for node.isDirty() ==Tree.IS_CLEAN is not enough
     				final double diff = l - branchLengths[node.getNr()];
-    				final boolean isDiff = Math.abs(diff) > 0.00000000001;
+    				final boolean isDiff = Math.abs(diff) > 0.000001;
     				if (!isDiff) {
     					continue;
     				}
     				//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
     			}
-    			*/
     			
-    			
+    			  			
     			final int category = categories.getValue(nr);			
     			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
@@ -468,7 +363,8 @@ public class ARClockModel extends Base {
         	//return true;
         }
         
-        if (ratesMeanInput.get().isDirtyCalculation()) {
+        // changed from isDirtyCalculation based on ratesOmegaInput feedback
+        if (ratesMeanInput.get().somethingIsDirty()) {
         	//System.out.println("Gamma mu changes");
         	categoriesOnly=false;
         	treeOnly=false;
@@ -477,6 +373,9 @@ public class ARClockModel extends Base {
         }
      
         //System.out.println("omega="+ratesOmegaInput.get().getArrayValue());
+        
+        // isDirtyCalculation did not report changes ratesOmegaInput
+        // somethingIsDirty seems to over-report them
         if (ratesOmegaInput.get().somethingIsDirty()) {
         	//System.out.println("Gamma omega changes");
         	categoriesOnly=false;
@@ -514,7 +413,7 @@ public class ARClockModel extends Base {
     @Override
     public void store() {
     	System.arraycopy(rates, 0, storedRates, 0, rates.length);
-    	System.arraycopy(branchLengths, 0, branchLengths, 0, branchLengths.length);
+    	System.arraycopy(branchLengths, 0, storedBranchLengths, 0, branchLengths.length);
     	storedScaleFactor = scaleFactor;
         super.store();
         // System.out.println("num calls="+numCalls+"  duration="+duration);
@@ -533,123 +432,7 @@ public class ARClockModel extends Base {
         scaleFactor = storedScaleFactor;
         super.restore();
     }
-   
-    /* piggybacking some tests */
-    
-    private void testGamma(double alpha,double beta) {
-    	double k = alpha; 
-    	double theta = 1/beta;
-    	// apache commons implementations corresponds to Gamma(k,theta)
-    	ContinuousDistribution gammaDist = new GammaDistributionImpl(k, theta); 
-    	for (double p=0; p < 1.0; p += 0.1) {
-    		double pinv;
-    		try {
-    			pinv = gammaDist.inverseCumulativeProbability( p );
-    		} catch (Exception e) {
-    			pinv = Double.NaN;
-    		}
-    		System.out.println(p + " --> "+pinv);
-    	}
-    	  	
-    }
-    
-    private void timeDistributions() {
-    	final int numIter=1000;
-    	final double start=0.1;
-    	final double end=0.9;
-    	final double delta=(end-start)/numIter;
-    	
-    	timeLogNormal(start,end,delta,numIter);
-    	
-    	timeGamma(start,end,delta,numIter);
-    	
-    	timeLogNormal(start,end,delta,numIter);
-    	
-    	timeGamma(start,end,delta,numIter);
-    	
-    	timeLogNormal(start,end,delta,numIter);
-    	
-    	timeGamma(start,end,delta,numIter);
-    	
-    	timeLogNormal(start,end,delta,numIter);
-    	
-    	timeGamma(start,end,delta,numIter);
-    	
-    	timeLogNormal(start,end,delta,numIter);
-    	
-    	timeGamma(start,end,delta,numIter);
-    	
-    	/* time ln = 3/4 time gamma */
-    	
-    }
-    
-    private void timeLogNormal(double start, double end, double delta, int numIter) {
-    	
-    	LogNormalDistributionModel distLN = new LogNormalDistributionModel();
-    	Double[] M = new Double[1]; M[0] = 1.0;
-    	RealParameter pM = new RealParameter(M);
-    	Double[] S = new Double[1]; S[0] = 0.5;
-    	RealParameter pS = new RealParameter(S);
-    	
-    	distLN.MParameterInput.setValue(pM, distLN);
-    	distLN.SParameterInput.setValue(pS, distLN);
-    	   	
-    	/* LogNormal */	
-    	
-    	startTime();
-		  	
-    	double p = start;
-    	for(int i=0; i < numIter; i++) {
-    		try {
-    			final double x = distLN.inverseCumulativeProbability(p);
-    		} catch (Exception e) {
-    			throw new RuntimeException("problem with inverse cum prob");
-    		}
-    		p += delta;
-    	}
-    	
-    	endTime(true);
-		
-		
-		System.out.println("Time log normal:"+duration);
-    }
-    
-    private void timeGamma(double start, double end, double delta, int numIter) {
-    	
-    	startTime();
-		
-    	GammaDistribution g;
-    	ContinuousDistribution gammaDist = new GammaDistributionImpl(2, 0.5); 
-    	
-    	double p = start;
-    	for(int i=0; i < numIter; i++) {
-    		try {
-    			final double x = gammaDist.inverseCumulativeProbability(p);
-    		} catch (Exception e) {
-    			throw new RuntimeException("problem with inverse cum prob");
-    		}
-    		p += delta;
-    	}
-    	
-    	endTime(true);
-		
-		System.out.println("Time gamma:"+duration);
-    	
-    }
-    
-    private void startTime() {
-    	startTime = System.nanoTime();
-    }
-    
-    private void endTime(boolean reset) {
-    	endTime = System.nanoTime();
-    	if (reset)
-    		duration = (endTime - startTime)/100000;
-    	else
-    		duration += (endTime - startTime)/100000;
-    }
-    
-    
+      
     
     
 	
