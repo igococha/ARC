@@ -65,7 +65,7 @@
     <parameter id="hky.frequencies" value="0.25" dimension="4" />
     <parameter id="popSize" value="0.077" lower="0.0" />
 
-    <run spec="MCMC" id="mcmc" chainLength="1000000"> <!--autoOptimize="true" -->
+    <run spec="MCMC" id="mcmc" chainLength="50"> <!--autoOptimize="true" -->
 		<state>
             <input name='stateNode' idref='hky.kappa'/>
             <input name='stateNode' idref='hky.frequencies'/>
@@ -132,7 +132,7 @@
         <operator id='frequenciesDelta' spec='DeltaExchangeOperator' delta="0.01" weight="0.1" parameter="@hky.frequencies" />
         <operator id='popSizeScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3" parameter="@popSize" />
         <operator id='treeScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3" tree="@tree" />
-        <operator spec='Uniform' weight="30" tree="@tree" />
+        <operator id ='treeUniform' spec='Uniform' weight="30" tree="@tree" />
         <operator spec='SubtreeSlide' weight="15" gaussian="true" size="0.0077" tree="@tree" />
         <operator id='narrow' spec='Exchange' isNarrow='true' weight="15" tree="@tree" />
         <operator id='wide' spec='Exchange' isNarrow='false' weight="3" tree="@tree" />
@@ -156,7 +156,7 @@
         <!-- <logger logEvery="100" fileName="test.$(seed).trees">
             <log idref="tree" />
         </logger> -->
-        <logger logEvery="10000">
+        <logger logEvery="10">
             <log idref="rateOmega" />
             <model idref='posterior' />
             <log idref="posterior" />
