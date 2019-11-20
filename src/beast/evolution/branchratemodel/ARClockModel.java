@@ -365,7 +365,7 @@ public class ARClockModel extends Base {
         
         // changed from isDirtyCalculation based on ratesOmegaInput feedback
         if (ratesMeanInput.get().somethingIsDirty()) {
-        	System.out.println("Gamma mu changes");
+        	//System.out.println("Gamma mu changes");
         	categoriesOnly=false;
         	treeOnly=false;
         	recompute = true;
@@ -374,9 +374,9 @@ public class ARClockModel extends Base {
      
         //System.out.println("omega="+ratesOmegaInput.get().getArrayValue());
         
-        if (ratesOmegaInput.get().isDirty(0)) {
-        	System.out.println("------ omege isDIRTY!!!");
-        }
+        //if (ratesOmegaInput.get().isDirty(0)) {
+        //	System.out.println("------ omega isDIRTY!!!");
+        //}
         
         // isDirtyCalculation did not report changes ratesOmegaInput
         // somethingIsDirty seems to over-report them
