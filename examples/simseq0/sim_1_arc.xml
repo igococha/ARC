@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="BEAST v2.5.0" version="2.5">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood:beast.core.parameter" required="BEAST v2.5.0" version="2.5">
 
 
     <data id="1" name="alignment">
@@ -105,8 +105,13 @@
                         <sequence id="seq_9_2000.8" taxon="9_2000.8" totalcount="4" value="AGCCCCCTACCTCGTTGGTCCTTAGCCTGTCACGTCTTCCTATTTTTATTTCACTCTTTGCCCTTTCATCTTTTTTCTTCTTAACTCCCTTCCTTTTTTCATTTCTTCAGCCCTGTTGAGCCCCTTTGTTTTCACGTTTCTCTTTCCAGCATTTGACGATACGTTTCGCTTTCTTGCTTTCTCTGGATCCCTCTCTTTTGATCCTATGGTTTTTCACTCTGTTTCTCCTGCTTCTGTTCCGCCTTCTGCTTTCCTTCTCCTCTCTTGTCGTTCTTCTTCCTTTATGCGCCAAGTTTGCTATTTTTTTCCTACATTTTCTTTTTCTCCCTTTCTTTTGGACGATGTTTCTAACTCCCATGCTGACCTCGGCTTGTTCCGACTGTATCTCATTTGCTTCTTCCGCTTTTGTTTTCTTAGGTCCGTTTTTGTTATGTATCGCTTCCTCCATACATCGTTATTCCTGATACTTTCTTCTTCATGCTTAACTCTTCTTGTATCATTTGACTGTTTTTATATCTCCTCCCCTTGTTCTTCTTTTGCGTCCTGATTGCTCGTCATCCTTCCCTTTTTTTCTTCTCCTTTCCTTTCTTCTCTTATCGTTTCATCTTTATCTCATGTTTCTTTGCTACCATTCGCCCTTATTCTAGTCTCACTGCCCTTCGTGTCCCATTTCTTATTTTTAGCCTTTCTTTAGCTAGCCCCTCTTATTTCTTTTTTTCTTCCTTTTTATCATTCTTTTAAGCTTTTTATTTCTCTGCTCCCACACATCTTCTCTCTCCCTTCTATGAACCATTCGTGCTTCTTGTTTTTCCTCTTTTCTTTTTCTACGATTTCTTTTTTCCCCTCTCCTTTCTCTTCATCCCTATACTTCTATCGTTCCACGTCTTTTCTTTCCTTGTTGGTTAACTCTCTTCTCCCCCTCCGCGCTTTCCTACTTTCTGTATTCGCTTTCGTCTCCTCTTTATCTTCTCAGCAGCTTCTTCATCTACCCCCTTCTCCC"/>
                     </data>
 
-
-    
+<!-- branch rate model ARC -->
+ <input spec='beast.evolution.branchratemodel.ARClockModel' id="branchRates" numberOfDiscreteRates="12">    
+        <parameter spec='IntegerParameter' name='rateCategories' id='rateCategories' dimension="11" value="1" />
+		<parameter name='rateMean' id='rateMean' value="1"  />
+		<parameter name='rateOmega' id='rateOmega' value="0.1"  lower="0.01" upper="0.2"/>
+		<tree idref="Tree.t:1" />
+</input>		    
 
 
     
@@ -124,7 +129,8 @@
 <map name="InverseGamma" >beast.math.distributions.InverseGamma</map>
 <map name="OneOnX" >beast.math.distributions.OneOnX</map>
 
- 
+
+
 
 <run id="mcmc" spec="MCMC" chainLength="10000000">
     <state id="state" storeEvery="5000">
@@ -138,11 +144,14 @@
         </tree>
         <parameter id="birthRate.t:1" name="stateNode">1.0</parameter>
         <parameter id="kappa.s:1" lower="0.0" name="stateNode">2.0</parameter>
-	
+	<!-- branch rate model parameters -->
+	 <input name='stateNode' idref='rateOmega' />
+         <input name='stateNode' idref='rateCategories'/>
+	 <!--
         <parameter id="ucldMean.c:1" lower="0.8" name="stateNode" upper="1.2">1.0</parameter>
-        <parameter id="ucldStdev.c:1" lower="0.0" name="stateNode">0.1</parameter>
-	
-        <stateNode id="rateCategories.c:1" spec="parameter.IntegerParameter" dimension="200">1</stateNode>
+        <parameter id="ucldStdev.c:1" lower="0.0" name="stateNode">0.1</parameter>	
+         <stateNode id="rateCategories.c:1" spec="parameter.IntegerParameter" dimension="200">1</stateNode>
+	 -->
         <parameter id="freqParameter.s:1" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25</parameter>
     </state>
 
@@ -164,10 +173,24 @@
                     <parameter id="RealParameter.2" estimate="false" name="S">1.25</parameter>
                 </LogNormal>
             </prior>
-
-	    <!-- branch rates priors -->
-            
-	    
+	    <!--  branch rate parameter priors -->
+	     <distribution id="rateOmega.prior" spec="beast.math.distributions.Prior" x="@rateOmega">
+                	<Gamma id="Gamma.0" name="distr">
+                    	<parameter id="rateOmega.alpha" estimate="false" name="alpha">0.1</parameter>
+                    	<parameter id="rateOmega.beta" estimate="false" name="beta">1.0</parameter>
+                	</Gamma>
+             </distribution>     
+	   <!--	 
+            <prior id="MeanRatePrior.c:1" name="distribution" x="@ucldMean.c:1">
+                <Uniform id="Uniform.3" name="distr" upper="Infinity"/>
+            </prior>
+            <prior id="ucldStdevPrior.c:1" name="distribution" x="@ucldStdev.c:1">
+                <Gamma id="Gamma.1" name="distr">
+                    <parameter id="RealParameter.6" estimate="false" name="alpha">2.0</parameter>
+                    <parameter id="RealParameter.7" estimate="false" name="beta">2.0</parameter>
+                </Gamma>
+		</prior>
+		-->
         </distribution>
         <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
             <distribution id="treeLikelihood.1" spec="ThreadedTreeLikelihood" data="@1" tree="@Tree.t:1">
@@ -179,10 +202,14 @@
                         <frequencies id="estimatedFreqs.s:1" spec="Frequencies" frequencies="@freqParameter.s:1"/>
                     </substModel>
                 </siteModel>
-
-
-		
-		
+		<branchRateModel idref="branchRates" />
+		<!-- previous UCRelaxed model
+                <branchRateModel id="RelaxedClock.c:1" spec="beast.evolution.branchratemodel.UCRelaxedClockModel" clock.rate="@ucldMean.c:1" rateCategories="@rateCategories.c:1" tree="@Tree.t:1">
+                    <LogNormal id="LogNormalDistributionModel.c:1" S="@ucldStdev.c:1" meanInRealSpace="true" name="distr">
+                        <parameter id="RealParameter.3" estimate="false" lower="0.0" name="M" upper="1.0">1.0</parameter>
+                    </LogNormal>
+                    </branchRateModel>
+		    -->
             </distribution>
         </distribution>
     </distribution>
@@ -205,26 +232,30 @@
 
     <operator id="KappaScaler.s:1" spec="ScaleOperator" parameter="@kappa.s:1" scaleFactor="0.5" weight="0.1"/>
 
+    <!-- branch rate model operators
     <operator id="ucldMeanScaler.c:1" spec="ScaleOperator" parameter="@ucldMean.c:1" scaleFactor="0.5" weight="1.0"/>
-
     <operator id="ucldStdevScaler.c:1" spec="ScaleOperator" parameter="@ucldStdev.c:1" scaleFactor="0.5" weight="3.0"/>
-
     <operator id="CategoriesRandomWalk.c:1" spec="IntRandomWalkOperator" parameter="@rateCategories.c:1" weight="10.0" windowSize="1"/>
-
     <operator id="CategoriesSwapOperator.c:1" spec="SwapOperator" intparameter="@rateCategories.c:1" weight="10.0"/>
-
     <operator id="CategoriesUniform.c:1" spec="UniformOperator" parameter="@rateCategories.c:1" weight="10.0"/>
-
     <operator id="relaxedUpDownOperator.c:1" spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
         <up idref="ucldMean.c:1"/>
         <down idref="Tree.t:1"/>
     </operator>
-
+    -->
+    <operator id='rateOmegaScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3">
+        <parameter idref="rateOmega" />
+    </operator> 
+    <operator id="CategoriesRandomWalk" spec="IntRandomWalkOperator" windowSize='1' weight="10" parameter="@rateCategories" />
+    <operator id='CategoriesSwapOperator' spec='SwapOperator' howMany="1" weight="10" intparameter='@rateCategories' />
+    <operator id='CategoriesUniform' spec='UniformOperator' weight="10" parameter='@rateCategories' /> 
+    
+    
     <operator id="FrequenciesExchanger.s:1" spec="DeltaExchangeOperator" delta="0.01" weight="0.1">
         <parameter idref="freqParameter.s:1"/>
     </operator>
 
-    <logger id="tracelog" fileName="1.log" logEvery="1000" model="@posterior" sanitiseHeaders="true" sort="smart">
+    <logger id="tracelog" fileName="1_arc.log" logEvery="1000" model="@posterior" sanitiseHeaders="true" sort="smart">
         <log idref="posterior"/>
         <log idref="likelihood"/>
         <log idref="prior"/>
@@ -233,10 +264,12 @@
         <log idref="YuleModel.t:1"/>
         <log idref="birthRate.t:1"/>
         <log idref="kappa.s:1"/>
-	
-        <log idref="rateOmega" />
-	
+<!--	
+        <log idref="ucldMean.c:1"/>
+        <log idref="ucldStdev.c:1"/>
         <log id="rate.c:1" spec="beast.evolution.branchratemodel.RateStatistic" branchratemodel="@RelaxedClock.c:1" tree="@Tree.t:1"/>
+-->
+	 <log idref="rateOmega" />
         <log idref="freqParameter.s:1"/>
     </logger>
 

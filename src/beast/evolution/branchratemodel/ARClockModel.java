@@ -270,7 +270,7 @@ public class ARClockModel extends Base {
     			if (treeOnly) {
     				// it seems that checking for node.isDirty() ==Tree.IS_CLEAN is not enough
     				final double diff = l - branchLengths[node.getNr()];
-    				final boolean isDiff = Math.abs(diff) > 0.000001;
+    				final boolean isDiff = Math.abs(diff) > 0.00000001;
     				if (!isDiff) {
     					continue;
     				}
@@ -381,7 +381,7 @@ public class ARClockModel extends Base {
         // isDirtyCalculation did not report changes ratesOmegaInput
         // somethingIsDirty seems to over-report them
         if (ratesOmegaInput.get().somethingIsDirty()) {
-        	System.out.println("Gamma omega changes");
+        	//System.out.println("Gamma omega changes");
         	categoriesOnly=false;
         	treeOnly=false;
         	recompute = true;
