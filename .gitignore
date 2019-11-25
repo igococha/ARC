@@ -7,8 +7,8 @@ build-lib
 .project
 
 # Beast generated files
-*.log
-*.state
+#*.log
+#*.state
 *.trees
 *.tree
 *.traj
