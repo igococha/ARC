@@ -151,9 +151,9 @@ public class ARClockModel extends Base {
         	Log.warning.println("rateMean :"+ratesMean.getValue());
         }
         
-        if (Math.abs(ratesMean.getValue()-1.0) > 1e-6 ) { // igor: should this be ONE in ARC's case?
-        	Log.warning.println("WARNING: mean of distribution for additive relaxed clock model is not 1.0.");
-        }
+        //if (Math.abs(ratesMean.getValue()-1.0) > 1e-6 ) { // igor: should this be ONE in ARC's case?
+        //	Log.warning.println("WARNING: mean of distribution for additive relaxed clock model is not 1.0.");
+        //}
        
         // new
         // unscaledBranchRates = new double[tree.getNodeCount()];
@@ -289,6 +289,12 @@ public class ARClockModel extends Base {
     			try {
     				rate = gammaDist.inverseCumulativeProbability( p );
     			} catch (MathException e) {
+    				System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
+    	        	System.out.println("mu = "+ratesMean.getValue());
+    	        	System.out.println("omega = "+ratesOmega.getValue());
+    	        	System.out.println("branch length = "+l);
+    	        	System.out.println("kappa ="+k+"  theta = "+theta);
+    	        	System.out.println("p = "+p);
     				throw new RuntimeException("Failed to compute inverse cumulative probability");
     			}
     			rates[nr] = rate;  			
