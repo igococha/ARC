@@ -334,7 +334,63 @@ public class ARClockModel extends Base {
     	treeOnly = false;
     }
     
-    
+ // includes all optimisations in a single function
+    private void calculateRatesForCategories_exception() {   	
+    	
+    	double rate=1.0;
+    	ContinuousDistribution gammaDist;
+    	//tree.getNodesAsArray();
+    	for(int i=0; i < tree.getNodeCount();i++) {
+    		final Node node = tree.getNode(i);
+    		if (! node.isRoot()) {   			
+    			final int nr = getNr(node);
+    			if (categoriesOnly && !categories.isDirty(nr)) {
+    				continue;
+    			}
+    			final double l = node.getLength();  
+    			
+    			
+    			if (treeOnly) {
+    				// it seems that checking for node.isDirty() ==Tree.IS_CLEAN is not enough
+    				final double diff = l - branchLengths[node.getNr()];
+    				final boolean isDiff = Math.abs(diff) > 0.00000001;
+    				if (!isDiff) {
+    					continue;
+    				}
+    				//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
+    			}
+    			
+    			  			
+    			final int category = categories.getValue(nr);			
+    			final double theta = ratesOmega.getValue() /  l  ;
+    			final double k = ratesMean.getValue() / theta;
+    			
+    			gammaDist = new GammaDistributionImpl(k*numSites, theta); 
+    			
+    			final double p = (category  + 0.5) / numCategories;
+    			branchLengths[node.getNr()] = l;
+    			
+    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
+    			try {
+    				rate = gammaDist.inverseCumulativeProbability( p ) / numSites;
+    			} catch (MathException e) {
+    				System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
+    	        	System.out.println("mu = "+ratesMean.getValue());
+    	        	System.out.println("omega = "+ratesOmega.getValue());
+    	        	System.out.println("branch length = "+l);
+    	        	System.out.println("kappa ="+k+"  theta = "+theta);
+    	        	System.out.println("p = "+p);
+    				throw new RuntimeException("Failed to compute inverse cumulative probability");
+    			}
+    			rates[nr] = rate;  			
+    		} else {  // node is root
+    			branchLengths[node.getNr()] = node.getLength(); 
+    		}
+    		// System.out.println(" rate = "+rate);
+    	}
+    	categoriesOnly=false;
+    	treeOnly = false;
+    }
     
     private void calculateRatesForRates() {
     	double rate=1.0;
