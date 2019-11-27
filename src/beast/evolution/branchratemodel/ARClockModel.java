@@ -2,6 +2,7 @@ package beast.evolution.branchratemodel;
 
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.ContinuousDistribution;
@@ -16,6 +17,9 @@ import beast.core.Input;
 import beast.core.parameter.IntegerParameter;
 import beast.core.parameter.RealParameter;
 import beast.core.util.Log;
+import beast.evolution.alignment.Alignment;
+import beast.evolution.alignment.Taxon;
+import beast.evolution.alignment.TaxonSet;
 import beast.evolution.branchratemodel.BranchRateModel.Base;
 import beast.evolution.tree.Node;
 import beast.evolution.tree.Tree;
@@ -46,7 +50,8 @@ public class ARClockModel extends Base {
     final public Input<RealParameter> ratesMeanInput = new Input<>("rateMean", "mean of rates Gamma probability distribution", Input.Validate.REQUIRED);
     final public Input<RealParameter> ratesOmegaInput = new Input<>("rateOmega", "omega factor of rates Gamma distribution", Input.Validate.REQUIRED);
 
-	
+    final public Input<Integer> numSitesInput = new Input<>("numSites", "Number of sites (sequence length)");
+    
     boolean useCategories;
     // either categories or rateProbsParameter is used
     RealParameter rateProbs; //when mode=rates
@@ -63,6 +68,7 @@ public class ARClockModel extends Base {
     private boolean normalize = false;
     
     int numCategories = 100;
+    int numSites;
     
     
     private boolean recompute = true;
@@ -80,7 +86,7 @@ public class ARClockModel extends Base {
     private double scaleFactor = 1.0; 
     private double storedScaleFactor = 1.0;
     
-    private int numCalls=0;
+
     
     
 
@@ -91,6 +97,25 @@ public class ARClockModel extends Base {
 		branchCount = nodeCount - 1;
 		categories = categoryInput.get();
 		rateProbs = rateProbsInput.get();
+		
+		TaxonSet taxa = tree.getTaxonset();
+		
+		List<Taxon> lt = taxa.taxonsetInput.get();
+		if (lt==null) System.out.println("lsyt if taxon null");
+		else System.out.println("list lengh = "+lt.size());
+		
+		//Alignment alignment = taxa.alignmentInput.get();
+		//if (alignment==null) {
+		//	System.out.println("Alignment is NULL");
+		//} else {
+		//int count = alignment.getSiteCount();
+		//System.out.println("------------------ Counts sites = "+count );
+		//}
+		if (numSitesInput.get()==null) 
+			numSites = 1;
+		else
+			numSites = numSitesInput.get();
+		System.out.println("ARC model. numSites ="+numSites);
 		
 	    ratesMean = ratesMeanInput.get();
 	    ratesOmega = ratesOmegaInput.get();
@@ -281,13 +306,15 @@ public class ARClockModel extends Base {
     			final int category = categories.getValue(nr);			
     			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
-    			gammaDist = new GammaDistributionImpl(k, theta); 
+    			
+    			gammaDist = new GammaDistributionImpl(k*numSites, theta); 
+    			
     			final double p = (category  + 0.5) / numCategories;
     			branchLengths[node.getNr()] = l;
-    			numCalls++;
+    			
     			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
     			try {
-    				rate = gammaDist.inverseCumulativeProbability( p );
+    				rate = gammaDist.inverseCumulativeProbability( p ) / numSites;
     			} catch (MathException e) {
     				System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
     	        	System.out.println("mu = "+ratesMean.getValue());

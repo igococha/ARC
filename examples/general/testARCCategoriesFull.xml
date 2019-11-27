@@ -41,7 +41,7 @@
     </input>
 
 
-    <input spec='ARClockModel' id="branchRates" numberOfDiscreteRates="12">    
+    <input spec='ARClockModel' id="branchRates" numberOfDiscreteRates="12" numSites="10">    
         <parameter spec='IntegerParameter' name='rateCategories' id='rateCategories' dimension="11" value="1" />
 		<parameter name='rateMean' id='rateMean' value="1"  />
 		<parameter name='rateOmega' id='rateOmega' value="0.1"  lower="0.01" upper="0.2"/>
