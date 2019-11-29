@@ -239,6 +239,9 @@ name="alignment">
     <operator id='rateMeanScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3">
         <parameter idref="rateMean" />
     </operator> 
+    <operator id="CategoriesRandomWalk" spec="IntRandomWalkOperator" windowSize='1' weight="10" parameter="@rateCategories" />
+    <operator id='CategoriesSwapOperator' spec='SwapOperator' howMany="1" weight="10" intparameter='@rateCategories' />
+    <operator id='CategoriesUniform' spec='UniformOperator' weight="10" parameter='@rateCategories' /> 
 
 
 
