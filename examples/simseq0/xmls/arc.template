@@ -27,7 +27,7 @@
 <map name="OneOnX" >beast.math.distributions.OneOnX</map>
 
 
-<run id="mcmc" spec="MCMC" chainLength="100000">
+<run id="mcmc" spec="MCMC" chainLength="10000000">
     <state id="state" spec="State" storeEvery="5000">
         <tree id="Tree.t:1" spec="beast.evolution.tree.Tree" name="stateNode">
             <trait id="dateTrait.t:1" spec="beast.evolution.tree.TraitSet" traitname="date" value="--datetrait--">
