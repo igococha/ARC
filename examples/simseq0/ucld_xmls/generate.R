@@ -43,8 +43,8 @@ for(f in seq.files) {
   seq.xml <- seq.info[[2]]
   date.trait <- seq.info[[3]]
   tree.number <- strsplit(f,'\\.')[[1]][[1]]
-  file.xml <- paste(tree.number,'.arc.',xml.version,'.xml',sep='')
-  file.log <- paste(tree.number,'.arc.',xml.version,'.log',sep='')
+  file.xml <- paste(tree.number,'.ucld.',xml.version,'.xml',sep='')
+  file.log <- paste(tree.number,'.ucld.',xml.version,'.log',sep='')
   file.str <- readChar(template.xml,file.info(template.xml)$size)
   file.str <- gsub("--sequences--",seq.xml,file.str)
   #  file.str <- gsub("--numsites--",seq.len,file.str)
@@ -60,7 +60,7 @@ if (FALSE) {
   xmls <- c()
   for(f in seq.files) {
     tree.number <- strsplit(f,'\\.')[[1]][[1]]
-    file.xml <- paste(tree.number,'.arc.',xml.version,'.xml',sep='')
+    file.xml <- paste(tree.number,'.ucld.',xml.version,'.xml',sep='')
     xmls <- c(xmls,file.xml)
   }
 }
