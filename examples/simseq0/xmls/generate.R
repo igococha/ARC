@@ -6,7 +6,7 @@ library(ape)
 ### Parameters
 # xml directory
 xml.dir <- "../seqs/"
-template.xml <- "template.arc"
+template.xml <- "arc.template"
 
 
 xml.version <- 5
@@ -14,6 +14,7 @@ xml.version <- 5
 # --numsites--
 # --sequences--
 # --logfile--
+# --datetrait--
 
 genXMLSequence <- function(seq.nexus) {
   tip.labels <- names(seq.nexus)

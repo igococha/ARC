@@ -1,7 +1,6 @@
 library(ggplot2)
 
 
-
 x <- seq(-4, 4, length=100)
 hx <- dnorm(x)
 
@@ -28,13 +27,13 @@ plot(x, px, type="l", lty=2, xlab="x value",
 
 # this is giving problems 
 
-kappa <- 0.0026641698338647143 
-theta <- 1.370734568776759
+kappa <- 0.005
+theta <- 1.0
 
 alpha <- kappa
 beta <- 1/theta
 
-x <- seq(0, 0.005, length=1500)
+x <- seq(0.0001, 0.05, length=1500)
 dx <- dgamma(x,alpha,beta)
 
 plot(x, dx, type="l", lty=2, xlab="x value",
