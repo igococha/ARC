@@ -1,0 +1,9 @@
+
+for ((wt=51;wt<=75;wt++)); do 
+  echo "deleting log file " $wt.ucld.5.log
+  rm $wt.ucld.5.log;
+  rm $wt.ucld.5.xml.state;
+done
+
+
+

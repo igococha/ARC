@@ -1,0 +1,16 @@
+#PBS -S /bin/bash
+#PBS -N runARC
+#PBS -l select=1:ncpus=1:mem=2000mb,walltime=24:00:00
+#PBS -j oe
+
+module load java/jdk-8u66
+
+cd /work/siveroni/arc/hpc_arc
+
+date
+java -jar beastARC_2.jar ${WHICHSIMODD}.arc.5.xml
+java -jar beastARC_2.jar ${WHICHSIMEVEN}.arc.5.xml
+date
+
+
+exit $?
