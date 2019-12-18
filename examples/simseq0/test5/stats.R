@@ -37,6 +37,9 @@ for(tree in seq(1,100)) {
   ucld.file <-  paste(ucld.dir,tree,".ucld.5.log",sep='')
   # ucld samples
   log.data <- read.table(ucld.file,sep="\t", header=TRUE)
+  n <- nrow(log.data)
+  s <- as.integer(0.1*n)
+  log.data <- log.data[s:n, ]
   ucld.rates <- log.data["ucldMean"][[1]]
   urate.mean <- mean(ucld.rates)
   urate.sd <- sd(ucld.rates)
@@ -46,6 +49,9 @@ for(tree in seq(1,100)) {
   # arc samples
   arc.file <- paste(arc.dir,tree,".arc.5.log",sep='')
   log.data <- read.table(arc.file,sep="\t", header=TRUE)
+   n <- nrow(log.data)
+  s <- as.integer(0.1*n)
+  log.data <- log.data[s:n, ]
   arc.rates <- log.data["rateMean"][[1]]
   arate.mean <- mean(arc.rates)
   arate.sd <-  sd(arc.rates)
