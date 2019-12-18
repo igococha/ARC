@@ -27,7 +27,7 @@ last.sample <- 2010
 # [16] "freqParameter.3"    "freqParameter.4"  
 
 
-df.rates <- data.frame(matrix(ncol=4,nrow=0))
+df.rates <- data.frame(matrix(ncol=6,nrow=0))
 df.tmrca <- data.frame(matrix(ncol=5,nrow=0))
 
 
@@ -58,14 +58,17 @@ for(tree in seq(1,100)) {
   arc.tmrcas <- last.sample - log.data["TreeHeight"][[1]]
   atmrca.mean <- mean(arc.tmrcas)
   atmrca.sd <- sd(arc.tmrcas)
-  rates.row <- c(urate.mean, urate.sd, arate.mean, arate.sd)
+  arc.omegas <- log.data["rateOmega"][[1]]
+  aomega.mean <- mean(arc.omegas)
+  aomega.sd <- sd(arc.omegas)
+  rates.row <- c(urate.mean, urate.sd, arate.mean, arate.sd, aomega.mean, aomega.sd)
   df.rates <- rbind(df.rates, rates.row)
   tmrca.row <- c(tmrca.true, utmrca.mean, utmrca.sd,  atmrca.mean, atmrca.sd)
   df.tmrca <- rbind(df.tmrca, tmrca.row)
   print(rates.row)
 }
 
-colnames(df.rates) <- c("urate.mean","urate.sd","arate.mean","arate.sd")
+colnames(df.rates) <- c("urate.mean","urate.sd","arate.mean","arate.sd","aomega.mean","aomega.sd")
 colnames(df.tmrca) <- c("tmrca.true", "utmrca.mean", "utmrca.sd",
                         "atmrca.mean","atmrca.sd")
 
