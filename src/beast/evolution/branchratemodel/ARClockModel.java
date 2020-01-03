@@ -159,7 +159,7 @@ public class ARClockModel extends Base {
         		Double [] initialProbs = new Double[branchCount];
         		for (int i = 0; i < branchCount; i++) {
         			initialProbs[i] = Randomizer.nextDouble();  // [0,1)
-        			System.out.println("p_i="+initialProbs[i]);
+        			//System.out.println("p_i="+initialProbs[i]);
         		}
         		RealParameter other = new RealParameter(initialProbs);
         		rateProbs.assignFromWithoutID(other);
