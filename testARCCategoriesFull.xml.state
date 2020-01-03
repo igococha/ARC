@@ -1,26 +1,26 @@
-<itsabeastystatewerein version='2.0' sample='50'>
-<statenode id='hky.kappa'>hky.kappa[1 1] (0.0,Infinity): 2.0 </statenode>
-<statenode id='hky.frequencies'>hky.frequencies[4 1] (-Infinity,Infinity): 0.25 0.25 0.25 0.25 </statenode>
-<statenode id='popSize'>popSize[1 1] (0.0,Infinity): 0.09766824666029279 </statenode>
-<statenode id='tree'>((5:0.06753106887869402,4:0.06753106887869402)9:0.0035962999184232652,((0:0.018359174824716586,(1:0.01106421444291593,2:0.01106421444291593)6:0.007294960381800655)7:0.026687411591834763,3:0.04504658641655135)8:0.026080782380565937)10:0.0</statenode>
-<statenode id='rateOmega'>rateOmega[1 1] (0.01,0.2): 0.1 </statenode>
-<statenode id='rateCategories'>rateCategories[10 1] (0,11): 9 10 7 1 1 10 9 1 1 0 </statenode>
+<itsabeastystatewerein version='2.0' sample='5000'>
+<statenode id='hky.kappa'>hky.kappa[1 1] (0.0,Infinity): 2.6588032759880433 </statenode>
+<statenode id='hky.frequencies'>hky.frequencies[4 1] (-Infinity,Infinity): 0.24069341573255212 0.25930658426744785 0.25 0.25 </statenode>
+<statenode id='popSize'>popSize[1 1] (0.0,Infinity): 0.14535777362251534 </statenode>
+<statenode id='tree'>((3:0.027347520713653133,((1:0.014535910579111373,2:0.014535910579111373)6:0.0026717032019036094,0:0.017207613781014982)7:0.010139906932638151)8:0.022061851446380887,(4:0.04926681794834656,5:0.04926681794834656)9:1.425542116874623E-4)10:0.0</statenode>
+<statenode id='rateOmega'>rateOmega[1 1] (0.01,0.2): 0.01046205667594065 </statenode>
+<statenode id='rateCategories'>rateCategories[10 1] (0,11): 9 2 7 5 8 11 7 3 0 8 </statenode>
 </itsabeastystatewerein>
 <!--
 {"operators":[
-{"id":"rateOmegaScaler","p":0.75,"accept":0,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"CategoriesRandomWalk","p":"NaN","accept":3,"reject":3,"acceptFC":0,"rejectFC":0,"rejectIv":1,"rejectOp":1},
-{"id":"CategoriesSwapOperator","p":"NaN","accept":4,"reject":1,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"CategoriesUniform","p":"NaN","accept":2,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"kappaScaler","p":0.75,"accept":0,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"frequenciesDelta","p":0.01,"accept":0,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"popSizeScaler","p":0.75,"accept":1,"reject":2,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"treeScaler","p":0.75,"accept":0,"reject":1,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"treeUniform","p":"NaN","accept":7,"reject":9,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"unknown","p":0.007700000000000002,"accept":1,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"narrow","p":"NaN","accept":3,"reject":9,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"wide","p":"NaN","accept":0,"reject":3,"acceptFC":0,"rejectFC":0,"rejectIv":2,"rejectOp":2},
-{"id":"unknown","p":"NaN","accept":0,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
-{"id":"unknown","p":0.75,"accept":2,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0}
+{"id":"rateOmegaScaler","p":0.75,"accept":105,"reject":34,"acceptFC":0,"rejectFC":0,"rejectIv":9,"rejectOp":9},
+{"id":"CategoriesRandomWalk","p":"NaN","accept":258,"reject":211,"acceptFC":0,"rejectFC":0,"rejectIv":168,"rejectOp":168},
+{"id":"CategoriesSwapOperator","p":"NaN","accept":250,"reject":232,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"CategoriesUniform","p":"NaN","accept":282,"reject":178,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"kappaScaler","p":0.75,"accept":2,"reject":1,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"frequenciesDelta","p":0.010000000000000004,"accept":1,"reject":0,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"popSizeScaler","p":0.75,"accept":103,"reject":34,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"treeScaler","p":0.75,"accept":46,"reject":77,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"treeUniform","p":"NaN","accept":451,"reject":921,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"unknown","p":0.007700000000000002,"accept":328,"reject":413,"acceptFC":0,"rejectFC":0,"rejectIv":41,"rejectOp":41},
+{"id":"narrow","p":"NaN","accept":86,"reject":642,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0},
+{"id":"wide","p":"NaN","accept":1,"reject":140,"acceptFC":0,"rejectFC":0,"rejectIv":71,"rejectOp":71},
+{"id":"unknown","p":"NaN","accept":0,"reject":53,"acceptFC":0,"rejectFC":0,"rejectIv":26,"rejectOp":26},
+{"id":"unknown","p":0.75,"accept":60,"reject":92,"acceptFC":0,"rejectFC":0,"rejectIv":0,"rejectOp":0}
 ]}
 -->

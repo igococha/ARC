@@ -1,7 +1,7 @@
 package beast.evolution.branchratemodel;
 
+import beast.evolution.branchratemodel.BranchRateModel.Base;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math.MathException;
@@ -20,7 +20,7 @@ import beast.core.util.Log;
 import beast.evolution.alignment.Alignment;
 import beast.evolution.alignment.Taxon;
 import beast.evolution.alignment.TaxonSet;
-import beast.evolution.branchratemodel.BranchRateModel.Base;
+
 import beast.evolution.tree.Node;
 import beast.evolution.tree.Tree;
 import beast.math.distributions.LogNormalDistributionModel;
@@ -40,11 +40,12 @@ import util.DistTest;
         year = 2019, firstAuthorSurname = "Didelot")
 
 public class ARClockModel extends Base {
-    final public Input<IntegerParameter> categoryInput = new Input<>("rateCategories", "the rate categories associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.REQUIRED);
-    final public Input<Integer> numberOfDiscreteRates = new Input<>("numberOfDiscreteRates", "the number of discrete rate categories to approximate the rate distribution by. A value <= 0 will cause the number of categories to be set equal to the number of branches in the tree. (default = -1)", -1);
+
+    final public Input<IntegerParameter> categoryInput = new Input<>("rateCategories", "the rate categories associated with nodes in the tree for sampling of individual rates among branches.");
     final public Input<RealParameter> rateProbsInput = new Input<>("rateProbs", "the accum probabilities of the rates associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.XOR, categoryInput);
+    
+    final public Input<Integer> numberOfDiscreteRates = new Input<>("numberOfDiscreteRates", "the number of discrete rate categories to approximate the rate distribution by. A value <= 0 will cause the number of categories to be set equal to the number of branches in the tree. (default = -1)", -1);
     final public Input<Tree> treeInput = new Input<>("tree", "the tree this relaxed clock is associated with.", Input.Validate.REQUIRED);
-    final public Input<Boolean> normalizeInput = new Input<>("normalize", "Whether to normalize the average rate (default false).", false);
    
     // Gamma distribution parameters
     final public Input<RealParameter> ratesMeanInput = new Input<>("rateMean", "mean of rates Gamma probability distribution", Input.Validate.REQUIRED);
@@ -65,15 +66,13 @@ public class ARClockModel extends Base {
     Tree tree;
     private int branchCount;//the number of branches of the tree
     private int nodeCount;
-    private boolean normalize = false;
     
     int numCategories = 100;
     int numSites;
     
     
     private boolean recompute = true;
-    private boolean categoriesOnly = false;
-    
+    private boolean samplingOnly = false;
     
     private boolean treeOnly = false;
     private double[] branchLengths; // accessed with nr
@@ -82,11 +81,7 @@ public class ARClockModel extends Base {
     double[] rates;
     double[] storedRates;
     
-    private boolean recomputeScaleFactor = true;
-    private double scaleFactor = 1.0; 
-    private double storedScaleFactor = 1.0;
-    
-
+ 
     
     
 
@@ -95,14 +90,23 @@ public class ARClockModel extends Base {
 		tree = treeInput.get();
 		nodeCount = tree.getNodeCount();
 		branchCount = nodeCount - 1;
-		categories = categoryInput.get();
-		rateProbs = rateProbsInput.get();
 		
-		TaxonSet taxa = tree.getTaxonset();
-		
-		List<Taxon> lt = taxa.taxonsetInput.get();
-		if (lt==null) System.out.println("lsyt if taxon null");
-		else System.out.println("list lengh = "+lt.size());
+						
+		if (categoryInput.get() != null) { 
+			categories = categoryInput.get();
+			useCategories=true;
+		} else if (rateProbsInput.get() != null) {
+			rateProbs = rateProbsInput.get();
+			useCategories = false;
+		} else {
+			throw new IllegalArgumentException("Input error: Must use rateCategories or rateProbs");
+		}
+        
+				
+		//TaxonSet taxa = tree.getTaxonset();	
+		//List<Taxon> lt = taxa.taxonsetInput.get();
+		//if (lt==null) System.out.println("lsyt if taxon null");
+		//else System.out.println("list lengh = "+lt.size());
 		
 		//Alignment alignment = taxa.alignmentInput.get();
 		//if (alignment==null) {
@@ -111,6 +115,7 @@ public class ARClockModel extends Base {
 		//int count = alignment.getSiteCount();
 		//System.out.println("------------------ Counts sites = "+count );
 		//}
+		
 		if (numSitesInput.get()==null) 
 			numSites = 1;
 		else
@@ -153,7 +158,8 @@ public class ARClockModel extends Base {
         		//randomly draw rates from the lognormal distribution
         		Double [] initialProbs = new Double[branchCount];
         		for (int i = 0; i < branchCount; i++) {
-        			initialProbs[i] =Randomizer.nextDouble();  // [0,1)
+        			initialProbs[i] = Randomizer.nextDouble();  // [0,1)
+        			System.out.println("p_i="+initialProbs[i]);
         		}
         		RealParameter other = new RealParameter(initialProbs);
         		rateProbs.assignFromWithoutID(other);
@@ -162,8 +168,6 @@ public class ARClockModel extends Base {
         	rateProbs.setUpper(1.0);
         }
         
-       
-        normalize = normalizeInput.get();
         
         meanRate = meanRateInput.get();  // from superclass
         if (meanRate == null) {
@@ -228,15 +232,8 @@ public class ARClockModel extends Base {
 		//debugTree();
 		if (this.useCategories) {
 			calculateRatesForCategories();
-			//calculateR4C();
-			//if (this.categoriesOnly)
-			//	calculateR4CCatOnly();
-			//else if (this.treeOnly)
-			//	calculateR4CTreeOnly();
-			//else
-			//	calculateR4C();
 		} else {
-			calculateRatesForRates();
+			calculateRatesForProbs();
 		}
 	}
     
@@ -272,10 +269,6 @@ public class ARClockModel extends Base {
 	}
     
 	
-	
-	
-
-	
 	// includes all optimisations in a single function
     private void calculateRatesForCategories() {   	
     	
@@ -286,12 +279,11 @@ public class ARClockModel extends Base {
     		final Node node = tree.getNode(i);
     		if (! node.isRoot()) {   			
     			final int nr = getNr(node);
-    			if (categoriesOnly && !categories.isDirty(nr)) {
+    			if (samplingOnly && !categories.isDirty(nr)) {
     				continue;
     			}
     			final double l = node.getLength();  
-    			
-    			
+    			   			
     			if (treeOnly) {
     				// it seems that checking for node.isDirty() ==Tree.IS_CLEAN is not enough
     				final double diff = l - branchLengths[node.getNr()];
@@ -303,26 +295,21 @@ public class ARClockModel extends Base {
     			}
     			
     			  			
-    			final int category = categories.getValue(nr);			
+    			final int category = categories.getValue(nr);
+    			final double p = (category  + 0.5) / numCategories;
+    			
     			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
     			
     			gammaDist = new GammaDistributionImpl(k*numSites, theta); 
     			
-    			final double p = (category  + 0.5) / numCategories;
     			branchLengths[node.getNr()] = l;
     			
     			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
     			try {
     				rate = gammaDist.inverseCumulativeProbability( p ) / numSites;
     			} catch (MathException e) {
-    				System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
-    	        	System.out.println("mu = "+ratesMean.getValue());
-    	        	System.out.println("omega = "+ratesOmega.getValue());
-    	        	System.out.println("branch length = "+l);
-    	        	System.out.println("kappa ="+k+"  theta = "+theta);
-    	        	System.out.println("p = "+p);
-    				throw new RuntimeException("Failed to compute inverse cumulative probability");
+    				inverseCumError(e,k,theta,p);
     			}
     			rates[nr] = rate;  			
     		} else {  // node is root
@@ -330,13 +317,12 @@ public class ARClockModel extends Base {
     		}
     		// System.out.println(" rate = "+rate);
     	}
-    	categoriesOnly=false;
+    	samplingOnly=false;
     	treeOnly = false;
     }
     
- // includes all optimisations in a single function
-    private void calculateRatesForCategories_exception() {   	
-    	
+ 
+    private void calculateRatesForProbs() {
     	double rate=1.0;
     	ContinuousDistribution gammaDist;
     	//tree.getNodesAsArray();
@@ -344,12 +330,11 @@ public class ARClockModel extends Base {
     		final Node node = tree.getNode(i);
     		if (! node.isRoot()) {   			
     			final int nr = getNr(node);
-    			if (categoriesOnly && !categories.isDirty(nr)) {
+    			if (samplingOnly && !rateProbs.isDirty(nr)) {
     				continue;
     			}
     			final double l = node.getLength();  
-    			
-    			
+    			   			
     			if (treeOnly) {
     				// it seems that checking for node.isDirty() ==Tree.IS_CLEAN is not enough
     				final double diff = l - branchLengths[node.getNr()];
@@ -358,29 +343,22 @@ public class ARClockModel extends Base {
     					continue;
     				}
     				//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
-    			}
+    			}    			   			  			
     			
-    			  			
-    			final int category = categories.getValue(nr);			
+    			final double p = rateProbs.getValue(nr);
+    			
     			final double theta = ratesOmega.getValue() /  l  ;
     			final double k = ratesMean.getValue() / theta;
     			
     			gammaDist = new GammaDistributionImpl(k*numSites, theta); 
     			
-    			final double p = (category  + 0.5) / numCategories;
     			branchLengths[node.getNr()] = l;
     			
     			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
     			try {
     				rate = gammaDist.inverseCumulativeProbability( p ) / numSites;
     			} catch (MathException e) {
-    				System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
-    	        	System.out.println("mu = "+ratesMean.getValue());
-    	        	System.out.println("omega = "+ratesOmega.getValue());
-    	        	System.out.println("branch length = "+l);
-    	        	System.out.println("kappa ="+k+"  theta = "+theta);
-    	        	System.out.println("p = "+p);
-    				throw new RuntimeException("Failed to compute inverse cumulative probability");
+    				inverseCumError(e,k,theta,p);
     			}
     			rates[nr] = rate;  			
     		} else {  // node is root
@@ -388,31 +366,21 @@ public class ARClockModel extends Base {
     		}
     		// System.out.println(" rate = "+rate);
     	}
-    	categoriesOnly=false;
+    	samplingOnly=false;
     	treeOnly = false;
+    	
+    	
     }
     
-    private void calculateRatesForRates() {
-    	double rate=1.0;
-    	ContinuousDistribution gammaDist;
-    	for(int i=0; i < tree.getNodeCount();i++) {
-    		final Node node = tree.getNode(i);
-    		if (! node.isRoot()) {   
-    			final int nr = getNr(node);
-    			double p = rateProbs.getValue(nr);
-    			final double theta = ratesOmega.getValue() /  node.getLength()   ;
-    			final double k = ratesMean.getValue() / theta;
-    			gammaDist = new GammaDistributionImpl(k, theta);   			  	       
-    	        try {
-    	        	rate = gammaDist.inverseCumulativeProbability( p );
-    	        } catch (MathException e) {
-    	        	throw new RuntimeException("Failed to compute inverse cumulative probability");
-    	        }
-    	        rates[nr] = rate;
-    		}
-    	}   	
-    }
     
+   private  void inverseCumError(MathException e, double k, double theta, double p) {
+	   System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
+	   System.out.println("mu = "+ratesMean.getValue());
+	   System.out.println("omega = "+ratesOmega.getValue());
+	   System.out.println("kappa ="+k+"  theta = "+theta);
+	   System.out.println("p = "+p);
+	   throw new RuntimeException("Failed to compute inverse cumulative probability");
+   }
     
 	
     /*  computes the idx used to access the arrays a[branchCount] 
@@ -441,13 +409,13 @@ public class ARClockModel extends Base {
     @Override
     protected boolean requiresRecalculation() {
         recompute = false;
-        recomputeScaleFactor = true;
-        categoriesOnly=true;
+        samplingOnly=true;
+        
         treeOnly= true;
         //System.out.println("calling requires recalculation");
         if (treeInput.get().somethingIsDirty()) {
         	//System.out.println("tree changes");
-        	categoriesOnly=false;
+        	samplingOnly=false;
         	recompute = true;
         	//return true;
         }
@@ -455,7 +423,7 @@ public class ARClockModel extends Base {
         // changed from isDirtyCalculation based on ratesOmegaInput feedback
         if (ratesMeanInput.get().somethingIsDirty()) {
         	//System.out.println("Gamma mu changes");
-        	categoriesOnly=false;
+        	samplingOnly=false;
         	treeOnly=false;
         	recompute = true;
         	//return true;
@@ -471,29 +439,26 @@ public class ARClockModel extends Base {
         // somethingIsDirty seems to over-report them
         if (ratesOmegaInput.get().somethingIsDirty()) {
         	//System.out.println("Gamma omega changes");
-        	categoriesOnly=false;
+        	samplingOnly=false;
         	treeOnly=false;
         	recompute = true;
         	//return true;
         }
      
-        if (categoryInput.get() != null && categoryInput.get().somethingIsDirty()) {
-        	//System.out.println("category changes");
-        	treeOnly=false;
-        	recompute = true;  // come back to this
-        	//return true;
+        if (useCategories) {
+        	if ( categoryInput.get().somethingIsDirty() ) {
+        		//System.out.println("category changes");
+            	treeOnly=false;
+            	recompute = true;  // come back to this
+            	//return true;
+        	}
+        } else { // use probs
+        	if (rateProbsInput.get().somethingIsDirty()) {
+        		treeOnly=false;
+            	recompute = true;
+        	}
         }
-    
-        if (rateProbsInput.get() != null && rateProbsInput.get().somethingIsDirty()) {
-        	//System.out.println("rate probs changes");
-        	categoriesOnly=false;
-        	treeOnly=false;
-        	recompute = true;  // come back to this
-        	//return true;
-        }
-    
-        // added to test likelihood incorrectly calculated error
-        //recompute=true;
+        
         
         // still don't know the use of this rate
         if (meanRate.somethingIsDirty()) {
@@ -507,7 +472,6 @@ public class ARClockModel extends Base {
     public void store() {
     	System.arraycopy(rates, 0, storedRates, 0, rates.length);
     	System.arraycopy(branchLengths, 0, storedBranchLengths, 0, branchLengths.length);
-    	storedScaleFactor = scaleFactor;
         super.store();
         // System.out.println("num calls="+numCalls+"  duration="+duration);
     }
@@ -522,11 +486,12 @@ public class ARClockModel extends Base {
         tmp = branchLengths;
         branchLengths = storedBranchLengths;
         storedBranchLengths = tmp;
-        scaleFactor = storedScaleFactor;
         super.restore();
     }
       
     
-    
+  	
 	
+	
+
 }
