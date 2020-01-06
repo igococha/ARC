@@ -1,7 +1,8 @@
 package beast.evolution.branchratemodel;
 
-import beast.evolution.branchratemodel.BranchRateModel.Base;
 
+
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math.MathException;
@@ -20,7 +21,7 @@ import beast.core.util.Log;
 import beast.evolution.alignment.Alignment;
 import beast.evolution.alignment.Taxon;
 import beast.evolution.alignment.TaxonSet;
-
+import beast.evolution.branchratemodel.BranchRateModel.Base;
 import beast.evolution.tree.Node;
 import beast.evolution.tree.Tree;
 import beast.math.distributions.LogNormalDistributionModel;
