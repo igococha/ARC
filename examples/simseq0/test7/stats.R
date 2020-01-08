@@ -1,7 +1,7 @@
 
 tmrca.all <- read.csv("../tmrca.tab", header = FALSE)[[1]]
 arc.dir <- "arc_logs/"
-ucld.dir <- "../test5.ucld/ucld_logs/"
+ucld.dir <- "../test5/ucld_hpc_logs/"
 last.sample <- 2010
 
 # ucld.data <- read.table("ucld_hpc_logs/10.ucld.5.log", sep="\t", header=TRUE)
@@ -30,6 +30,7 @@ last.sample <- 2010
 df.rates <- data.frame(matrix(ncol=6,nrow=0))
 df.tmrca <- data.frame(matrix(ncol=5,nrow=0))
 
+
 for(tree in seq(1,100)) {
   # row <- c()
   tmrca.true <- tmrca.all[tree]
@@ -46,7 +47,7 @@ for(tree in seq(1,100)) {
   utmrca.mean <- mean(ucld.tmrcas)
   utmrca.sd <- sd(ucld.tmrcas)
   # arc samples
-  arc.file <- paste(arc.dir,tree,".arc.5.log",sep='')
+  arc.file <- paste(arc.dir,tree,".arc.7.log",sep='')
   log.data <- read.table(arc.file,sep="\t", header=TRUE)
    n <- nrow(log.data)
   s <- as.integer(0.1*n)

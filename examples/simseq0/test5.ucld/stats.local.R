@@ -1,7 +1,6 @@
 
 tmrca.all <- read.csv("../tmrca.tab", header = FALSE)[[1]]
-arc.dir <- "arc_logs/"
-ucld.dir <- "../test5.ucld/ucld_logs/"
+ucld.dir <- "ucld_logs/"
 last.sample <- 2010
 
 # ucld.data <- read.table("ucld_hpc_logs/10.ucld.5.log", sep="\t", header=TRUE)
@@ -45,31 +44,15 @@ for(tree in seq(1,100)) {
   ucld.tmrcas <- last.sample - log.data["TreeHeight"][[1]]
   utmrca.mean <- mean(ucld.tmrcas)
   utmrca.sd <- sd(ucld.tmrcas)
-  # arc samples
-  arc.file <- paste(arc.dir,tree,".arc.5.log",sep='')
-  log.data <- read.table(arc.file,sep="\t", header=TRUE)
-   n <- nrow(log.data)
-  s <- as.integer(0.1*n)
-  log.data <- log.data[s:n, ]
-  arc.rates <- log.data["rateMean"][[1]]
-  arate.mean <- mean(arc.rates)
-  arate.sd <-  sd(arc.rates)
-  arc.tmrcas <- last.sample - log.data["TreeHeight"][[1]]
-  atmrca.mean <- mean(arc.tmrcas)
-  atmrca.sd <- sd(arc.tmrcas)
-  arc.omegas <- log.data["rateOmega"][[1]]
-  aomega.mean <- mean(arc.omegas)
-  aomega.sd <- sd(arc.omegas)
-  rates.row <- c(urate.mean, urate.sd, arate.mean, arate.sd, aomega.mean, aomega.sd)
+  rates.row <- c(urate.mean, urate.sd)
   df.rates <- rbind(df.rates, rates.row)
-  tmrca.row <- c(tmrca.true, utmrca.mean, utmrca.sd,  atmrca.mean, atmrca.sd)
+  tmrca.row <- c(tmrca.true, utmrca.mean, utmrca.sd)
   df.tmrca <- rbind(df.tmrca, tmrca.row)
   print(rates.row)
 }
 
-colnames(df.rates) <- c("urate.mean","urate.sd","arate.mean","arate.sd","aomega.mean","aomega.sd")
-colnames(df.tmrca) <- c("tmrca.true", "utmrca.mean", "utmrca.sd",
-                        "atmrca.mean","atmrca.sd")
+colnames(df.rates) <- c("urate.mean","urate.sd")
+colnames(df.tmrca) <- c("tmrca.true", "utmrca.mean", "utmrca.sd")
 
 
 write.csv(df.rates, file="stats_rates.csv", row.names=FALSE)
