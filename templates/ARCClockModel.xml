@@ -14,37 +14,86 @@
        templateinfo='template for the Additive Relaxed Clock Model (ARC)'>
        
   <mergewith point='clockModelTemplates'>
+ 
   
-  <!--  ARC with Categories -->   
-  <subtemplate id='ARCWithCategories' class='beast.evolution.branchratemodel.ARClockModel'
-                     mainid='ARClock.c:$(n)'
-                     suppressInputs='beast.evolution.branchratemodel.ARClockModel.clock.rate,
-                     beast.evolution.branchratemodel.ARClockModel.rateProbs,
-                     beast.evolution.branchratemodel.ARClockModel.tree'>
+  <!--  ARC with probability sampling -->   
+  <subtemplate id='ARCwithProbs' class='beast.evolution.branchratemodel.ARClockModel'
+               mainid='ARClock.c:$(n)'
+               suppressInputs='beast.evolution.branchratemodel.ARClockModel.clock.rate
+               ,beast.evolution.branchratemodel.ARClockModel.rateCategories
+               ,beast.evolution.branchratemodel.ARClockModel.numberOfDiscreteRates
+               ,beast.evolution.branchratemodel.ARClockModel.tree'>
   <![CDATA[
    	<plugin spec='beast.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)'>
-   	  <rateCategories spec='parameter.IntegerParameter' id='rateCategories.c:$(n)' value="1" dimension='10' estimate='true'/>
-	  <rateMean spec="parameter.RealParameter" id='rateMean.c$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
-	  <rateOmega spec="parameter.RealParameter" id='rateOmega.c$(n)' value=".5" lower="0.1" upper="30" estimate='true' /> 
+   	  <rateProbs spec='parameter.RealParameter' id='rateProbs.c:$(n)'  dimension='1' value='0.5' estimate='true' />    	
+	  <rateMean spec="parameter.RealParameter"  id='rateMean.c:$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
+	  <rateOmega spec="parameter.RealParameter" id='rateOmega:c$(n)' value=".5" lower="0.1" upper="30" estimate='true' /> 
 	</plugin>  
 	
-	<operator id='rateMeanScaler.c$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@rateMean.c$(n)'  /> 
+	<operator id='rateMeanScaler.c:$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@rateMean.c:$(n)' /> 
+	
+    <prior id="rateMeanPrior.c:$(n)"  x="@rateMean.c:$(n)">
+		<distr spec="beast.math.distributions.Gamma">
+		  <parameter name="alpha" value="0.005 " estimate="false" /> 
+		  <parameter name="beta" value="1.0" estimate="false" />
+		</distr>
+	</prior>    
+
+  
+  ]]>
+  <!--  ARC w/Categories connect elements -->
+  <!--  state nodes -->
+  <connect srcID='rateMean.c:$(n)' targetID='state' inputName='stateNode' 
+      if='rateMean.c:$(n)/estimate=true' />
+      <!--      if='inlikelihood(rateMean.c:$(n)) and rateMean.c:$(n)/estimate=true'  -->
+           
+           
+   
+   
+  <connect srcID='rateMeanScaler.c:$(n)' targetID='mcmc' inputName='operator'
+            if='rateMean.c:$(n)/estimate=true' >
+           Scale mean of rate distribution of partition c:$(n)
+  </connect>
+   <!--       if='inlikelihood(rateMean.c:$(n)) and rateMean.c:$(n)/estimate=true'  -->              
+ 
+  <connect srcID='rateMeanPrior.c:$(n)' targetID='prior' inputName='distribution'
+            if='inlikelihood(rateMean.c:$(n)) and inlikelihood(Tree.t:$(n)) and rateMean.c:$(n)/estimate=true'>
+            prior mean of mu (mean ARC distribution) of partition c:$(n)
+   </connect>
+ 
+ <!-- if='inlikelihood(rateMean.c:$(n)) and inlikelihood(Tree.t:$(n)) and rateMean.c:$(n)/estimate=true -->
+ 
+  </subtemplate>
+  
+     
+  </mergewith>
+
+</beast>
+
+<!-- 
+
+inside CDATA
 	<operator id='rateOmegaScaler.c$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@rateOmega.c$(n)'/>
-    <operator id="CategoriesRandomWalk.c:$(n)" spec="IntRandomWalkOperator" windowSize='1' weight="10" parameter="@rateCategories.c:$(n)"/>
-    <operator id='CategoriesSwapOperator.c:$(n)' spec='SwapOperator' howMany="1" weight="10" intparameter='@rateCategories.c:$(n)'/>
-	<operator id='CategoriesUniform.c:$(n)' spec='UniformOperator' weight="10" parameter='@rateCategories.c:$(n)'/>
-	    
+    <operator id="ProbsRandomWalk.c:$(n)" spec="RealRandomWalkOperator" windowSize='1' weight="10" parameter="@rateProbs.c:$(n)"/>
+    <operator id='ProbsSwapOperator.c:$(n)' spec='SwapOperator' howMany="1" weight="10" parameter='@rateProbs.c:$(n)'/>
+	<operator id='ProbsUniform.c:$(n)' spec='UniformOperator' weight="10" parameter='@rateProbs.c:$(n)'/>
+	
+
+	
+	
+	
+	
     <operator id="arcUpDownOperator.c:$(n)"  spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
       <up idref="rateMean.c$(n)"/>
       <down idref="Tree.t:$(n)"/>
     </operator>
     
-     <prior id="rateMeanPrior.c$(n)"  x="@rateMean.c$(n)">
+   	<prior id="rateMeanPrior.c:$(n)"  x="@rateMean.c:$(n)">
 		<distr spec="beast.math.distributions.Gamma">
-		  <parameter name="alpha" value="0.005 " estimate="false" /> <!-- shape -->
-		  <parameter name="beta" value="1.0" estimate="false" /> <!-- scale -->
+		  <parameter name="alpha" value="0.005 " estimate="false" /> 
+		  <parameter name="beta" value="1.0" estimate="false" />
 		</distr>
-	 </prior>  
+	</prior>    
      
      <prior id="rateOmegaPrior.c$(n)" x="@rateOmega.c$(n)">
 		<distr  spec="beast.math.distributions.Gamma">
@@ -52,49 +101,44 @@
 			<parameter name="beta" value="1.0"  estimate="false" />
 		</distr>
     </prior>     	  
-  
-  ]]>
-  <!--  ARC w/Categories connect elements -->
-  <!--  state nodes -->
-  <connect srcID='rateMean.c:$(n)' targetID='state' inputName='stateNode'
-           if='inlikelihood(rateMean.c:$(n)) and rateMean.c:$(n)/estimate=true'/>
-  <connect srcID='rateOmega.c:$(n)' targetID='state' inputName='stateNode'
+
+
+ <connect srcID='rateOmega.c:$(n)' targetID='state' inputName='stateNode'
            if='inlikelihood(rateOmega.c:$(n)) and rateOmega.c:$(n)/estimate=true'/>
-  <connect srcID='rateCategories.c:$(n)' targetID='state' inputName='stateNode'
-                     if='inlikelihood(rateCategories.c:$(n))'/>
+  <connect srcID='rateProbs.c:$(n)' targetID='state' inputName='stateNode'
+                     if='inlikelihood(rateProbs.c:$(n))'/>
                      
-  <!--  operators -->
-  <connect srcID='rateMeanScaler.c:$(n)' targetID='mcmc' inputName='operator'
-           if='inlikelihood(rateMean.c:$(n)) and rateMean.c:$(n)/estimate=true'>Scale mean of rate distribution of partition c:$(n)
-  </connect>
+ 
+  
+  
+  
+  <connect srcID='rateMeanPrior.c:$(n)' targetID='prior' inputName='distribution'
+            if='inlikelihood(rateMean.c:$(n)) and inlikelihood(Tree.t:$(n)) and rateMean.c:$(n)/estimate=true'>
+            prior mean of mu (mean ARC distribution) of partition c:$(n)
+   </connect>
+ 
   <connect srcID='rateOmegaScaler.c:$(n)' targetID='mcmc' inputName='operator'
            if='inlikelihood(rateOmega.c:$(n)) and rateOmega.c:$(n)/estimate=true'>Scale omega of rate distribution of partition c:$(n)
   </connect>
-   <connect srcID='CategoriesRandomWalk.c:$(n)' targetID='mcmc' inputName='operator'
-            if='inlikelihood(rateCategories.c:$(n)) and rateCategories.c:$(n)/estimate=true'>Randomly change categories of partition c:$(n)
+   <connect srcID='ProbsRandomWalk.c:$(n)' targetID='mcmc' inputName='operator'
+            if='inlikelihood(rateProbs.c:$(n)) and rateProbs.c:$(n)/estimate=true'>Randomly change categories of partition c:$(n)
    </connect>
-   <connect srcID='CategoriesSwapOperator.c:$(n)' targetID='mcmc' inputName='operator'
-             if='inlikelihood(rateCategories.c:$(n)) and rateCategories.c:$(n)/estimate=true'>Swap categories of partition c:$(n)
+   <connect srcID='ProbsSwapOperator.c:$(n)' targetID='mcmc' inputName='operator'
+             if='inlikelihood(rateProbs.c:$(n)) and rateProbs.c:$(n)/estimate=true'>Swap categories of partition c:$(n)
    </connect>
-   <connect srcID='CategoriesUniform.c:$(n)' targetID='mcmc' inputName='operator'
-            if='inlikelihood(rateCategories.c:$(n)) and rateCategories.c:$(n)/estimate=true'>Uniformly draw categories of partition c:$(n)
+   <connect srcID='ProbsUniform.c:$(n)' targetID='mcmc' inputName='operator'
+            if='inlikelihood(rateProbs.c:$(n)) and rateProbs.c:$(n)/estimate=true'>Uniformly draw categories of partition c:$(n)
    </connect>
    <connect srcID='arcUpDownOperator.c:$(n)' targetID='mcmc' inputName='operator'
              if='nooperator(FixMeanRatesOperator) and inlikelihood(rateMean.c:$(n)) and rateMean.c:$(n)/estimate=true and Tree.t:$(n)/estimate=true'>
                 Up/down scaler for mean of rate distribution (ARC) and tree of partition c:$(n)
    </connect>
-   <!--  linking the tree to mcmc components / commented out -->
-   <!--  this is already part of the model -->
-   <connect srcID='Tree.t:$(n)' targetID='ARClock.c:$(n)' inputName='tree' if='inlikelihood(RelaxedClock.c:$(n))'/>
-   <!-- don't understand this
-   <connect srcID='Tree.t:$(n)' targetID='rate.c:$(n)' inputName='tree' if='inlikelihood(RelaxedClock.c:$(n))'/>
-     -->     
+  
+   <connect srcID='Tree.t:$(n)' targetID='ARClock.c:$(n)' inputName='tree' if='inlikelihood(ARClock.c:$(n))'/>
+  
      
-   <!--  Priors --> 
-   <connect srcID='rateMeanPrior.c:$(n)' targetID='prior' inputName='distribution'
-            if='inlikelihood(rateMean.c:$(n)) and inlikelihood(Tree.t:$(n)) and rateMean.c:$(n)/estimate=true'>
-            prior mean of mu (mean ARC distribution) of partition c:$(n)
-   </connect>
+ 
+   
    <connect srcID='rateOmegaPrior.c:$(n)' targetID='prior' inputName='distribution'
             if='inlikelihood(rateOmega.c:$(n))'>
             prior mean of omega (mean ARC distribution) of partition c:$(n)
@@ -103,8 +147,8 @@
     <connect srcID='ARClock.c:$(n)' targetID='TreeWithMetaDataLogger.t:$(n)' inputName='branchratemodel'
              if='inposterior(ARClock.c:$(n))'/>        
             
-  </subtemplate>
-     
-  </mergewith>
 
-</beast>
+
+
+
+ -->
