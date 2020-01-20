@@ -24,9 +24,9 @@
                ,beast.evolution.branchratemodel.ARClockModel.tree'>
   <![CDATA[
    	<plugin spec='beast.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)'>
-   	  <rateProbs spec='parameter.RealParameter' id='rateProbs.c:$(n)'  dimension='1' value='0.5' estimate='false' />    	
+   	  <rateProbs spec='parameter.RealParameter' id='rateProbs.c:$(n)'  dimension='1' value='0.5' estimate='true' />    	
 	  <rateMean spec="parameter.RealParameter"  id='rateMean.c:$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
-	  <rateOmega spec="parameter.RealParameter" id='rateOmega:c$(n)' value=".5" lower="0.1" upper="30" estimate='false' /> 
+	  <rateOmega spec="parameter.RealParameter" id='rateOmega:c$(n)' value=".5" lower="0.1" upper="30" estimate='true' /> 
 	</plugin>  
 	
 	<operator id='rateMeanScaler.c:$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@rateMean.c:$(n)' /> 
