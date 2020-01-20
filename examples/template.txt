@@ -5,11 +5,7 @@ inside CDATA
 
  
     
-    <operator id="ProbsRandomWalk.c:$(n)" spec="RealRandomWalkOperator" windowSize='1' weight="10" parameter="@rateProbs.c:$(n)"/>
-    <operator id='ProbsSwapOperator.c:$(n)' spec='SwapOperator' howMany="1" weight="10" parameter='@rateProbs.c:$(n)'/>
-	<operator id='ProbsUniform.c:$(n)' spec='UniformOperator' weight="10" parameter='@rateProbs.c:$(n)'/>
-	
-	
+ 
     <operator id="arcUpDownOperator.c:$(n)"  spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
       <up idref="rateMean.c$(n)"/>
       <down idref="Tree.t:$(n)"/>
@@ -22,11 +18,7 @@ inside CDATA
 
  
            
-           
-  <connect srcID='rateProbs.c:$(n)' targetID='state' inputName='stateNode'
-                     if='inlikelihood(rateProbs.c:$(n))'/>
-                     
- 
+  
   
   
   
@@ -40,6 +32,8 @@ inside CDATA
    <connect srcID='ProbsUniform.c:$(n)' targetID='mcmc' inputName='operator'
             if='inlikelihood(rateProbs.c:$(n)) and rateProbs.c:$(n)/estimate=true'>Uniformly draw categories of partition c:$(n)
    </connect>
+   
+   
    <connect srcID='arcUpDownOperator.c:$(n)' targetID='mcmc' inputName='operator'
              if='nooperator(FixMeanRatesOperator) and inlikelihood(rateMean.c:$(n)) and rateMean.c:$(n)/estimate=true and Tree.t:$(n)/estimate=true'>
                 Up/down scaler for mean of rate distribution (ARC) and tree of partition c:$(n)

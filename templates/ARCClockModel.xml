@@ -32,6 +32,12 @@
 	
 	<operator id='arcRateMeanScaler.c:$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@arcRateMean.c:$(n)' /> 
 	<operator id='arcRateOmegaScaler.c:$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@arcRateOmega.c:$(n)'/>
+
+    <operator id="arcProbsRandomWalk.c:$(n)" spec="RealRandomWalkOperator" windowSize='1' weight="10" parameter="@arcRateProbs.c:$(n)"/>
+    <operator id='arcProbsSwapOperator.c:$(n)' spec='SwapOperator' howMany="1" weight="10" parameter='@arcRateProbs.c:$(n)'/>
+	<operator id='arcProbsUniform.c:$(n)' spec='UniformOperator' weight="10" parameter='@arcRateProbs.c:$(n)'/>
+	
+	
 	
     <prior id="arcRateMeanPrior.c:$(n)"  x="@arcRateMean.c:$(n)">
 		<distr spec="beast.math.distributions.Gamma">
@@ -52,7 +58,10 @@
   <connect srcID='arcRateMean.c:$(n)' targetID='state' inputName='stateNode' 
            if= 'inlikelihood(arcRateMean.c:$(n)) and arcRateMean.c:$(n)/estimate=true'  />   
   <connect srcID='arcRateOmega.c:$(n)' targetID='state' inputName='stateNode'
-           if='inlikelihood(arcRateOmega.c:$(n)) and arcRateOmega.c:$(n)/estimate=true'/>
+           if='inlikelihood(arcRateOmega.c:$(n)) and arcRateOmega.c:$(n)/estimate=true'/>            
+  <connect srcID='arcRateProbs.c:$(n)' targetID='state' inputName='stateNode'
+                     if='inlikelihood(arcRateProbs.c:$(n))'/>
+                         
      
   <connect srcID='arcRateMeanScaler.c:$(n)' targetID='mcmc' inputName='operator'
             if='inlikelihood(arcRateMean.c:$(n)) and arcRateMean.c:$(n)/estimate=true' >
@@ -73,6 +82,19 @@
             if='inlikelihood(arcRateOmega.c:$(n))'>
             prior mean of omega (mean ARC distribution) of partition c:$(n)
    </connect>
+   
+   
+   <connect srcID='arcProbsRandomWalk.c:$(n)' targetID='mcmc' inputName='operator'
+            if='inlikelihood(arcRateProbs.c:$(n)) and arcRateProbs.c:$(n)/estimate=true'>Randomly change categories of partition c:$(n)
+   </connect>
+   <connect srcID='arcProbsSwapOperator.c:$(n)' targetID='mcmc' inputName='operator'
+             if='inlikelihood(arcRateProbs.c:$(n)) and arcRateProbs.c:$(n)/estimate=true'>Swap categories of partition c:$(n)
+   </connect>
+   <connect srcID='arcProbsUniform.c:$(n)' targetID='mcmc' inputName='operator'
+            if='inlikelihood(arcRateProbs.c:$(n)) and arcRateProbs.c:$(n)/estimate=true'>Uniformly draw categories of partition c:$(n)
+   </connect>
+   
+   
   
   </subtemplate>
   

@@ -141,6 +141,7 @@ name="alignment">
         <parameter id="birthRate.t:1" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
         <parameter id="arcRateMean.c:1" spec="parameter.RealParameter" lower="1.0E-4" name="stateNode" upper="10.0">0.005</parameter>
         <parameter id="arcRateOmega.c:1" spec="parameter.RealParameter" lower="0.1" name="stateNode" upper="30.0">0.5</parameter>
+        <parameter id="arcRateProbs.c:1" spec="parameter.RealParameter" dimension="200" name="stateNode">0.5</parameter>
     </state>
 
     <init id="RandomTree.t:1" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:1" taxa="@1">
@@ -176,9 +177,7 @@ name="alignment">
                     <parameter id="proportionInvariant.s:1" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
                     <substModel id="JC69.s:1" spec="JukesCantor"/>
                 </siteModel>
-                <branchRateModel id="ARClock.c:1" spec="beast.evolution.branchratemodel.ARClockModel" rateMean="@arcRateMean.c:1" rateOmega="@arcRateOmega.c:1" tree="@Tree.t:1">
-                    <parameter id="arcRateProbs.c:1" spec="parameter.RealParameter" dimension="200" name="rateProbs">0.5</parameter>
-                </branchRateModel>
+                <branchRateModel id="ARClock.c:1" spec="beast.evolution.branchratemodel.ARClockModel" rateMean="@arcRateMean.c:1" rateOmega="@arcRateOmega.c:1" rateProbs="@arcRateProbs.c:1" tree="@Tree.t:1"/>
             </distribution>
         </distribution>
     </distribution>
@@ -202,6 +201,12 @@ name="alignment">
     <operator id="arcRateMeanScaler.c:1" spec="ScaleOperator" parameter="@arcRateMean.c:1" scaleFactor="0.75" weight="3.0"/>
 
     <operator id="arcRateOmegaScaler.c:1" spec="ScaleOperator" parameter="@arcRateOmega.c:1" scaleFactor="0.75" weight="3.0"/>
+
+    <operator id="arcProbsRandomWalk.c:1" spec="RealRandomWalkOperator" parameter="@arcRateProbs.c:1" weight="10.0" windowSize="1.0"/>
+
+    <operator id="arcProbsSwapOperator.c:1" spec="SwapOperator" parameter="@arcRateProbs.c:1" weight="10.0"/>
+
+    <operator id="arcProbsUniform.c:1" spec="UniformOperator" parameter="@arcRateProbs.c:1" weight="10.0"/>
 
     <logger id="tracelog" spec="Logger" fileName="1.log" logEvery="1000" model="@posterior" sanitiseHeaders="true" sort="smart">
         <log idref="posterior"/>
