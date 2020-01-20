@@ -2,13 +2,12 @@
 <!-- 
 
 inside CDATA
-	<operator id='rateOmegaScaler.c$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@rateOmega.c$(n)'/>
+
+ 
+    
     <operator id="ProbsRandomWalk.c:$(n)" spec="RealRandomWalkOperator" windowSize='1' weight="10" parameter="@rateProbs.c:$(n)"/>
     <operator id='ProbsSwapOperator.c:$(n)' spec='SwapOperator' howMany="1" weight="10" parameter='@rateProbs.c:$(n)'/>
 	<operator id='ProbsUniform.c:$(n)' spec='UniformOperator' weight="10" parameter='@rateProbs.c:$(n)'/>
-	
-
-	
 	
 	
     <operator id="arcUpDownOperator.c:$(n)"  spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
@@ -16,23 +15,14 @@ inside CDATA
       <down idref="Tree.t:$(n)"/>
     </operator>
     
-   	<prior id="rateMeanPrior.c:$(n)"  x="@rateMean.c:$(n)">
-		<distr spec="beast.math.distributions.Gamma">
-		  <parameter name="alpha" value="0.005 " estimate="false" /> 
-		  <parameter name="beta" value="1.0" estimate="false" />
-		</distr>
-	</prior>    
+   
      
-     <prior id="rateOmegaPrior.c$(n)" x="@rateOmega.c$(n)">
-		<distr  spec="beast.math.distributions.Gamma">
-			<parameter name="alpha" value="0.1" estimate="false" />
-			<parameter name="beta" value="1.0"  estimate="false" />
-		</distr>
-    </prior>     	  
+     	  
 
 
- <connect srcID='rateOmega.c:$(n)' targetID='state' inputName='stateNode'
-           if='inlikelihood(rateOmega.c:$(n)) and rateOmega.c:$(n)/estimate=true'/>
+ 
+           
+           
   <connect srcID='rateProbs.c:$(n)' targetID='state' inputName='stateNode'
                      if='inlikelihood(rateProbs.c:$(n))'/>
                      
@@ -40,14 +30,7 @@ inside CDATA
   
   
   
-  <connect srcID='rateMeanPrior.c:$(n)' targetID='prior' inputName='distribution'
-            if='inlikelihood(rateMean.c:$(n)) and inlikelihood(Tree.t:$(n)) and rateMean.c:$(n)/estimate=true'>
-            prior mean of mu (mean ARC distribution) of partition c:$(n)
-   </connect>
- 
-  <connect srcID='rateOmegaScaler.c:$(n)' targetID='mcmc' inputName='operator'
-           if='inlikelihood(rateOmega.c:$(n)) and rateOmega.c:$(n)/estimate=true'>Scale omega of rate distribution of partition c:$(n)
-  </connect>
+  
    <connect srcID='ProbsRandomWalk.c:$(n)' targetID='mcmc' inputName='operator'
             if='inlikelihood(rateProbs.c:$(n)) and rateProbs.c:$(n)/estimate=true'>Randomly change categories of partition c:$(n)
    </connect>
@@ -67,10 +50,7 @@ inside CDATA
      
  
    
-   <connect srcID='rateOmegaPrior.c:$(n)' targetID='prior' inputName='distribution'
-            if='inlikelihood(rateOmega.c:$(n))'>
-            prior mean of omega (mean ARC distribution) of partition c:$(n)
-   </connect>
+   
             
     <connect srcID='ARClock.c:$(n)' targetID='TreeWithMetaDataLogger.t:$(n)' inputName='branchratemodel'
              if='inposterior(ARClock.c:$(n))'/>        
