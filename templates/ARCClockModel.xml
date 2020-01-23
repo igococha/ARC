@@ -25,6 +25,7 @@
                ,beast.evolution.branchratemodel.ARClockModel.tree'>
   <![CDATA[
    	<plugin spec='beast.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)'>
+   	  <parameter name='clock.rate' id='ucldMean.c:$(n)' value='1.0' estimate='false' />
    	  <rateProbs spec='parameter.RealParameter' id='arcRateProbs.c:$(n)'  dimension='1' value='0.5' estimate='true' />    	
 	  <rateMean spec="parameter.RealParameter"  id='arcRateMean.c:$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
 	  <rateOmega spec="parameter.RealParameter" id='arcRateOmega.c:$(n)' value=".5" lower="0.1" upper="30" estimate='true' /> 
@@ -37,6 +38,11 @@
     <operator id='arcProbsSwapOperator.c:$(n)' spec='SwapOperator' howMany="1" weight="10" parameter='@arcRateProbs.c:$(n)'/>
 	<operator id='arcProbsUniform.c:$(n)' spec='UniformOperator' weight="10" parameter='@arcRateProbs.c:$(n)'/>
 	
+	<operator id="arcUpDownOperator.c:$(n)"  spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
+      <up idref="arcRateMean.c:$(n)"/>
+      <down idref="Tree.t:$(n)"/>
+    </operator>
+    
 	
 	
     <prior id="arcRateMeanPrior.c:$(n)"  x="@arcRateMean.c:$(n)">
@@ -94,7 +100,24 @@
             if='inlikelihood(arcRateProbs.c:$(n)) and arcRateProbs.c:$(n)/estimate=true'>Uniformly draw categories of partition c:$(n)
    </connect>
    
+   <connect srcID='arcUpDownOperator.c:$(n)' targetID='mcmc' inputName='operator'
+             if='nooperator(FixMeanRatesOperator) and inlikelihood(arcRateMean.c:$(n)) and arcRateMean.c:$(n)/estimate=true and Tree.t:$(n)/estimate=true'>
+                Up/down scaler for mean of rate distribution (ARC) and tree of partition c:$(n)
+   </connect>
    
+   <connect srcID='arcRateMean.c:$(n)' targetID='tracelog' inputName='log'
+                     if='inlikelihood(arcRateMean.c:$(n))'/>
+                     
+   <connect srcID='arcRateOmega.c:$(n)' targetID='tracelog' inputName='log'
+                     if='inlikelihood(arcRateOmega.c:$(n))'/>
+    
+    <!--              
+   <connect srcID='Tree.t:$(n)' targetID='ARClock.c:$(n)' inputName='tree' if='inlikelihood(ARClock.c:$(n))'/>
+     
+    <connect srcID='ARClock.c:$(n)' targetID='TreeWithMetaDataLogger.t:$(n)' inputName='branchratemodel'
+             if='inposterior(ARClock.c:$(n))'/>        
+    -->          
+                     
   
   </subtemplate>
   
