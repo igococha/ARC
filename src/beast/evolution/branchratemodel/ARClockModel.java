@@ -50,7 +50,9 @@ public class ARClockModel extends Base {
     // Gamma distribution parameters
     final public Input<RealParameter> ratesMeanInput = new Input<>("rateMean", "mean of rates Gamma probability distribution", Input.Validate.REQUIRED);
     final public Input<RealParameter> ratesOmegaInput = new Input<>("rateOmega", "omega factor of rates Gamma distribution", Input.Validate.REQUIRED);
-    final public Input<Integer> numSitesInput = new Input<>("numSites", "Number of sites (sequence length)",1);
+    
+    final public Input<Integer> numSitesInput = new Input<>("numSites", "Number of sites (sequence length)");
+    final public Input<Alignment> alignmentInput = new Input<>("alignment", "Sequence alignment"); 
     
     boolean useCategories;
     // either categories or rateProbsParameter is used
@@ -79,18 +81,13 @@ public class ARClockModel extends Base {
     
     double[] rates;
     double[] storedRates;
-    
- 
-    
-    
+   
 
     @Override
 	public void initAndValidate() {
 		tree = treeInput.get();
 		nodeCount = tree.getNodeCount();
-		branchCount = nodeCount - 1;
-		
-						
+		branchCount = nodeCount - 1;						
 		if (categoryInput.get() != null) { 
 			categories = categoryInput.get();
 			useCategories=true;
@@ -115,11 +112,18 @@ public class ARClockModel extends Base {
 		//System.out.println("------------------ Counts sites = "+count );
 		//}
 		
-		if (numSitesInput.get()==null) 
-			numSites = 1;
-		else
+		numSites = 1;
+		if (alignmentInput.get() != null) {
+			numSites = alignmentInput.get().getSiteCount();
+			if (numSitesInput.get()!=null) {
+				Log.warning("ARC warning: specify either alignment of numberOfSites. Using alignment info");
+			}	
+		} else if (numSitesInput.get()!=null){
 			numSites = numSitesInput.get();
-		System.out.println("ARC model. numSites ="+numSites);
+		} else {
+			numSites = 1;
+		}
+		
 		
 	    ratesMean = ratesMeanInput.get();
 	    ratesOmega = ratesOmegaInput.get();
@@ -130,14 +134,15 @@ public class ARClockModel extends Base {
         if (useCategories) {
             numCategories = numberOfDiscreteRates.get();
             if (numCategories <= 0) numCategories = branchCount;
-            Log.info.println("  ARClockModel: using " + numCategories + " rate " +
+            Log.info.println("ARClockModel: using " + numCategories + " rate " +
                     "categories to approximate rate distribution across branches.");
         } else {
             if (numberOfDiscreteRates.get() != -1) {  // if it's not the default i.e. it has been set as input
                 throw new IllegalArgumentException("Can't specify both numberOfDiscreteRates and  rateProbs inputs.");
             }
-            Log.info.println("  ARClockModel: using rate probs as parameter for sampling across branches.");          
+            Log.info.println("ARClockModel: using rate probs as parameter for sampling across branches.");          
         }
+        Log.info.println("Number of sites = "+numSites);
         
         //initialize rates in both types of inputs
         if (useCategories) {       	

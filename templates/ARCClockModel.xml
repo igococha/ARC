@@ -22,9 +22,11 @@
                ,beast.evolution.branchratemodel.ARClockModel.rateCategories
                ,beast.evolution.branchratemodel.ARClockModel.rateProbs
                ,beast.evolution.branchratemodel.ARClockModel.numberOfDiscreteRates
+               ,beast.evolution.branchratemodel.ARClockModel.numSites
+               ,beast.evolution.branchratemodel.ARClockModel.alignment
                ,beast.evolution.branchratemodel.ARClockModel.tree'>
   <![CDATA[
-   	<plugin spec='beast.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)'>
+   	<plugin spec='beast.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)' alignment='@$(n)'>
    	  <parameter name='clock.rate' id='ucldMean.c:$(n)' value='1.0' estimate='false' />
    	  <rateProbs spec='parameter.RealParameter' id='arcRateProbs.c:$(n)'  dimension='1' value='0.5' estimate='true' />    	
 	  <rateMean spec="parameter.RealParameter"  id='arcRateMean.c:$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
