@@ -215,7 +215,7 @@
 				-->
 				<!-- branch rate model ARC -->
 				<branchRateModel spec='beast.evolution.branchratemodel.ARClockModel' id="branchRates"
-				tree="@Tree.t:1" rateProbs='@rateProbs' rateMean='@rateMean' rateOmega='@rateOmega' numSites="--numsites--" />    	    
+				tree="@Tree.t:1" rateProbs='@rateProbs' rateMean='@rateMean' rateOmega='@rateOmega' numSites="10000" />    	    
 
 				
 				

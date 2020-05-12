@@ -75,7 +75,7 @@ for(f in seq.files) {
   file.log <- paste(tree.number,'.',type,'.',xml.version,'.log',sep='')
   file.str <- readChar(template.xml,file.info(template.xml)$size)
   file.str <- gsub("--sequences--",seq.xml,file.str)
-  #  file.str <- gsub("--numsites--",seq.len,file.str)
+  file.str <- gsub("--numsites--",seq.len,file.str)
   file.str <- gsub("--logfile--",file.log,file.str)
   file.str <- gsub("--datetrait--",date.trait,file.str)
   sink(file.xml)
