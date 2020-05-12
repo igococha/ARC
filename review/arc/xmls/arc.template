@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="" version="2.6">
+
+
+<data id="1" spec="Alignment" name="alignment">
+
+--sequences--
+
+</data>
+
+
+    
+
+
+    
+
+
+    
+<map name="Uniform" >beast.math.distributions.Uniform</map>
+<map name="Exponential" >beast.math.distributions.Exponential</map>
+<map name="LogNormal" >beast.math.distributions.LogNormalDistributionModel</map>
+<map name="Normal" >beast.math.distributions.Normal</map>
+<map name="Beta" >beast.math.distributions.Beta</map>
+<map name="Gamma" >beast.math.distributions.Gamma</map>
+<map name="LaplaceDistribution" >beast.math.distributions.LaplaceDistribution</map>
+<map name="prior" >beast.math.distributions.Prior</map>
+<map name="InverseGamma" >beast.math.distributions.InverseGamma</map>
+<map name="OneOnX" >beast.math.distributions.OneOnX</map>
+
+
+<run id="mcmc" spec="MCMC" chainLength="10000000">
+    <state id="state" spec="State" storeEvery="5000">
+        <tree id="Tree.t:1" spec="beast.evolution.tree.Tree" name="stateNode">
+            <trait id="dateTrait.t:1" spec="beast.evolution.tree.TraitSet" traitname="date" value="--datetrait--">
+                <taxa id="TaxonSet.1" spec="TaxonSet">
+                    <alignment idref="1"/>
+                </taxa>
+            </trait>
+            <taxonset idref="TaxonSet.1"/>
+        </tree>
+        
+		<!--
+				<parameter id="clockRate.c:1" spec="parameter.RealParameter" name="stateNode">0.005</parameter>
+		-->
+        <!-- branch rate model parameters -->
+	 <parameter spec='parameter.RealParameter' name='stateNode' id='rateProbs'  dimension='1' value='0.5'  /> 
+			<parameter spec="parameter.RealParameter" name="stateNode" id='rateMean' value=".005" lower=".0001" upper="10.0"  />
+			<parameter spec="parameter.RealParameter" name="stateNode" id='rateOmega' value=".5"  lower="0.1" upper="30"/>
+        <parameter id="kappa.s:1" spec="parameter.RealParameter" lower="0.0" name="stateNode">2.0</parameter>
+        <parameter id="mutationRate.s:1" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="gammaShape.s:1" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="popSize.t:1" spec="parameter.RealParameter" name="stateNode">0.3</parameter>
+        <parameter id="freqParameter.s:1" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25</parameter>
+    </state>
+
+    <init id="RandomTree.t:1" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:1" taxa="@1">
+        <populationModel id="ConstantPopulation0.t:1" spec="ConstantPopulation">
+            <parameter id="randomPopSize.t:1" spec="parameter.RealParameter" name="popSize">1.0</parameter>
+        </populationModel>
+    </init>
+
+    <distribution id="posterior" spec="util.CompoundDistribution">
+        <distribution id="prior" spec="util.CompoundDistribution">
+            <distribution id="CoalescentConstant.t:1" spec="Coalescent">
+                <populationModel id="ConstantPopulation.t:1" spec="ConstantPopulation" popSize="@popSize.t:1"/>
+                <treeIntervals id="TreeIntervals.t:1" spec="TreeIntervals" tree="@Tree.t:1"/>
+            </distribution>
+			<!--
+						<prior id="ClockPrior.c:1" name="distribution" x="@clockRate.c:1">
+							<Uniform id="Uniform.0" name="distr" upper="Infinity"/>
+						</prior>
+			-->
+				<!--  branch rate parameter priors -->
+				 <distribution id="rateOmega.prior" spec="beast.math.distributions.Prior" x="@rateOmega">
+							<Gamma id="Gamma.0" name="distr">
+								<parameter id="rateOmega.alpha" estimate="false" name="alpha">0.1</parameter>
+								<parameter id="rateOmega.beta" estimate="false" name="beta">1.0</parameter>
+							</Gamma>
+				 </distribution>     
+				 <distribution id="rateMean.prior" spec="beast.math.distributions.Prior" x="@rateMean">
+							<Gamma id="Gamma.1" name="distr">
+								<parameter id="rateMean.alpha" estimate="false" name="alpha">0.005</parameter>
+								<parameter id="rateMean.beta" estimate="false" name="beta">1.0</parameter>
+							</Gamma>
+				 </distribution>     
+            <prior id="FrequenciesPrior.s:1" name="distribution" x="@freqParameter.s:1">
+                <Uniform id="Uniform.3" name="distr"/>
+            </prior>
+            <prior id="GammaShapePrior.s:1" name="distribution" x="@gammaShape.s:1">
+                <Exponential id="Exponential.0" name="distr">
+                    <parameter id="RealParameter.0" spec="parameter.RealParameter" estimate="false" name="mean">1.0</parameter>
+                </Exponential>
+            </prior>
+            <prior id="KappaPrior.s:1" name="distribution" x="@kappa.s:1">
+                <LogNormal id="LogNormalDistributionModel.0" name="distr">
+                    <parameter id="RealParameter.1" spec="parameter.RealParameter" estimate="false" name="M">1.0</parameter>
+                    <parameter id="RealParameter.2" spec="parameter.RealParameter" estimate="false" name="S">1.25</parameter>
+                </LogNormal>
+            </prior>
+            <prior id="PopSizePrior.t:1" name="distribution" x="@popSize.t:1">
+                <OneOnX id="OneOnX.1" name="distr"/>
+            </prior>
+        </distribution>
+        <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
+            <distribution id="treeLikelihood.1" spec="ThreadedTreeLikelihood" data="@1" tree="@Tree.t:1">
+                <siteModel id="SiteModel.s:1" spec="SiteModel" gammaCategoryCount="4" mutationRate="@mutationRate.s:1" shape="@gammaShape.s:1">
+                    <parameter id="proportionInvariant.s:1" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                    <substModel id="hky.s:1" spec="HKY" kappa="@kappa.s:1">
+                        <frequencies id="estimatedFreqs.s:1" spec="Frequencies" frequencies="@freqParameter.s:1"/>
+                    </substModel>
+                </siteModel>
+                
+				<!--
+								<branchRateModel id="StrictClock.c:1" spec="beast.evolution.branchratemodel.StrictClockModel" clock.rate="@clockRate.c:1"/>
+				-->
+				<!-- branch rate model ARC -->
+				<branchRateModel spec='beast.evolution.branchratemodel.ARClockModel' id="branchRates"
+				tree="@Tree.t:1" rateProbs='@rateProbs' rateMean='@rateMean' rateOmega='@rateOmega' numSites="--numsites--" />    	    
+
+				
+				
+            </distribution>
+        </distribution>
+    </distribution>
+
+
+
+
+	<!--
+		<operator id="StrictClockRateScaler.c:1" spec="ScaleOperator" parameter="@clockRate.c:1" scaleFactor="0.75" weight="3.0"/>
+	  <operator id="strictClockUpDownOperator.c:1" spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
+        <up idref="clockRate.c:1"/>
+        <down idref="Tree.t:1"/>
+    </operator>
+	-->
+	<operator id='rateOmegaScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3">
+        <parameter idref="rateOmega" />
+    </operator> 
+    <operator id='rateMeanScaler' spec='ScaleOperator' scaleFactor="0.75" weight="3">
+        <parameter idref="rateMean" />
+    </operator>
+
+  <operator id="ProbsRandomWalk" spec="RealRandomWalkOperator" windowSize='1' weight="10" parameter="@rateProbs" />
+        <operator id='ProbsSwapOperator' spec='SwapOperator' howMany="1" weight="10" parameter='@rateProbs' />
+        <operator id='ProbsUniform' spec='UniformOperator' weight="10" parameter='@rateProbs' /> 
+
+
+   <operator id="arcUpDownOperator.c:1" spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
+        <up idref="rateMean"/>
+        <down idref="Tree.t:1"/>
+    </operator>
+
+
+
+    <operator id="KappaScaler.s:1" spec="ScaleOperator" parameter="@kappa.s:1" scaleFactor="0.5" weight="0.1"/>
+
+    <operator id="gammaShapeScaler.s:1" spec="ScaleOperator" parameter="@gammaShape.s:1" scaleFactor="0.5" weight="0.1"/>
+
+    <operator id="FixMeanMutationRatesOperator" spec="DeltaExchangeOperator" delta="0.75" weight="2.0">
+        <parameter idref="mutationRate.s:1"/>
+        <weightvector id="weightparameter" spec="parameter.IntegerParameter" estimate="false" lower="0" upper="0">1000</weightvector>
+    </operator>
+
+    <operator id="CoalescentConstantTreeScaler.t:1" spec="ScaleOperator" scaleFactor="0.5" tree="@Tree.t:1" weight="3.0"/>
+
+    <operator id="CoalescentConstantTreeRootScaler.t:1" spec="ScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:1" weight="3.0"/>
+
+    <operator id="CoalescentConstantUniformOperator.t:1" spec="Uniform" tree="@Tree.t:1" weight="30.0"/>
+
+    <operator id="CoalescentConstantSubtreeSlide.t:1" spec="SubtreeSlide" tree="@Tree.t:1" weight="15.0"/>
+
+    <operator id="CoalescentConstantNarrow.t:1" spec="Exchange" tree="@Tree.t:1" weight="15.0"/>
+
+    <operator id="CoalescentConstantWide.t:1" spec="Exchange" isNarrow="false" tree="@Tree.t:1" weight="3.0"/>
+
+    <operator id="CoalescentConstantWilsonBalding.t:1" spec="WilsonBalding" tree="@Tree.t:1" weight="3.0"/>
+
+    <operator id="PopSizeScaler.t:1" spec="ScaleOperator" parameter="@popSize.t:1" scaleFactor="0.75" weight="3.0"/>
+
+    <operator id="FrequenciesExchanger.s:1" spec="DeltaExchangeOperator" delta="0.01" weight="0.1">
+        <parameter idref="freqParameter.s:1"/>
+    </operator>
+
+    <logger id="tracelog" spec="Logger" fileName="--logfile--" logEvery="1000" model="@posterior" sanitiseHeaders="true" sort="smart">
+        <log idref="posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+        <log idref="treeLikelihood.1"/>
+        <log id="TreeHeight.t:1" spec="beast.evolution.tree.TreeHeightLogger" tree="@Tree.t:1"/>
+		<!--
+				<log idref="clockRate.c:1"/>
+		-->
+			<log idref="rateOmega" />
+			<log idref="rateMean" />
+        <log idref="kappa.s:1"/>
+        <log idref="mutationRate.s:1"/>
+        <log idref="gammaShape.s:1"/>
+        <log idref="popSize.t:1"/>
+        <log idref="CoalescentConstant.t:1"/>
+        <log idref="freqParameter.s:1"/>
+    </logger>
+
+    <logger id="screenlog" spec="Logger" logEvery="1000">
+        <log idref="posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+        	 <log idref="rateOmega" />
+			 <log idref="rateMean" />
+			 <log idref="TreeHeight.t:1" />
+    </logger>
+<!--
+    <logger id="treelog.t:1" spec="Logger" fileName="1.4arc.trees" logEvery="1" mode="tree">
+        <log id="TreeWithMetaDataLogger.t:1" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@Tree.t:1"/>
+    </logger>
+-->
+</run>
+
+</beast>
