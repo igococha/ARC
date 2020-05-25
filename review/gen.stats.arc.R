@@ -53,8 +53,10 @@ for(tree in seq(101,200)) {
   arc.omegas <- log.data["rateOmega"][[1]]
   aomega.mean <- mean(arc.omegas)
   aomega.sd <- sd(arc.omegas)
+  aomega.hd95 <- hdi(arc.omegas, credMass=0.95)
+  aomega.q95 <- quantile(arc.omegas, c(0.05,0.95))
   # rates.row <- c(urate.mean, urate.sd, arate.mean, arate.sd, aomega.mean, aomega.sd)
-  rates.row <- c(arate.mean, arate.sd, hd95["lower"][[1]],hd95["upper"][[1]],q95[[1]],q95[[2]], aomega.mean, aomega.sd)
+  rates.row <- c(arate.mean, arate.sd, hd95["lower"][[1]],hd95["upper"][[1]],q95[[1]],q95[[2]], aomega.mean, aomega.sd,aomega.hd95["lower"][[1]],aomega.hd95["upper"][[1]],aomega.q95[[1]],aomega.q95[[2]])
   df.rates <- rbind(df.rates, rates.row)
 
   arc.tmrcas <- last.sample - log.data["TreeHeight"][[1]]
@@ -68,7 +70,7 @@ for(tree in seq(101,200)) {
   print(rates.row)
 }
 
-colnames(df.rates) <- c("arate.mean","arate.sd","arate.l","arate.u","arate.q5","arate.q95" ,"aomega.mean","aomega.sd")
+colnames(df.rates) <- c("arate.mean","arate.sd","arate.l","arate.u","arate.q5","arate.q95" ,"aomega.mean","aomega.sd","aomega.l","aomega.u","aomega.q5","aomega.q95")
 colnames(df.tmrca) <- c("tmrca.true","atmrca.mean","atmrca.sd","atmrca.hd95.l","atmrca.hd95.u","atmrca.q5","atmrca.q95" )
 
 write.csv(df.rates, file=paste(arc.dir,"stats_rates.csv",sep=''), row.names=FALSE)
