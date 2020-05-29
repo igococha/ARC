@@ -1,8 +1,0 @@
-
-for ((wt=76;wt<=100;wt++)); do 
-  echo "simulation " $wt
-  qsub -v WHICHSIM=$wt runucld.pbs; 
-done
-
-
-

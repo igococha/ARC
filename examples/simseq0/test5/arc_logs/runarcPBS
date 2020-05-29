@@ -1,7 +1,0 @@
-
-for ((wtodd=1,wteven=2;wteven<=100;wtodd=wtodd+2,wteven=wteven+2)); do 
- qsub -v WHICHSIMODD=$wtodd,WHICHSIMEVEN=$wteven runarc.pbs; 
-done
-
-
-
