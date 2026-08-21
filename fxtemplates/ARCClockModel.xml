@@ -1,37 +1,26 @@
-<beast version='2.6'
-       namespace='beast.app.beauti
-       :beast.core
-       :beast.evolution.branchratemodel
-       :beast.evolution.speciation
-       :beast.evolution.tree.coalescent
-       :beast.core.util
-       :beast.evolution.nuc
-       :beast.evolution.operators
-       :beast.evolution.sitemodel
-       :beast.evolution.substitutionmodel
-       :beast.evolution.likelihood
-       :beast.evolution:beast.math.distributions'
+<beast version='2.7'
+       namespace='beastfx.app.beauti:beastfx.app.inputeditor:beast.pkgmgmt:beast.base.core:beast.base.inference:beast.base.inference.distribution:beast.base.inference.operator:beast.base.inference.parameter:beast.base.inference.util:beast.base.evolution:beast.base.evolution.branchratemodel:beast.base.evolution.likelihood:beast.base.evolution.operator:beast.base.evolution.sitemodel:beast.base.evolution.speciation:beast.base.evolution.substitutionmodel:beast.base.evolution.tree:beast.base.evolution.tree.coalescent:beast.base.util:beast.base.math:arc.evolution.branchratemodel'
        templateinfo='template for the Additive Relaxed Clock Model (ARC)'>
        
   <mergewith point='clockModelTemplates'>
  
   
-  <subtemplate id='ARC' class='beast.evolution.branchratemodel.ARClockModel'
+  <subtemplate id='ARC' class='arc.evolution.branchratemodel.ARClockModel'
                mainid='ARClock.c:$(n)'
-               suppressInputs='beast.evolution.branchratemodel.ARClockModel.clock.rate
-               ,beast.evolution.branchratemodel.ARClockModel.rateCategories
-               ,beast.evolution.branchratemodel.ARClockModel.rateProbs
-               ,beast.evolution.branchratemodel.ARClockModel.numberOfDiscreteRates
-               ,beast.evolution.branchratemodel.ARClockModel.numSites
-               ,beast.evolution.branchratemodel.ARClockModel.alignment
-               ,beast.evolution.branchratemodel.ARClockModel.tree'>
+               suppressInputs='arc.evolution.branchratemodel.ARClockModel.clock.rate
+               ,arc.evolution.branchratemodel.ARClockModel.rateCategories
+               ,arc.evolution.branchratemodel.ARClockModel.rateProbs
+               ,arc.evolution.branchratemodel.ARClockModel.numberOfDiscreteRates
+               ,arc.evolution.branchratemodel.ARClockModel.numSites
+               ,arc.evolution.branchratemodel.ARClockModel.alignment
+               ,arc.evolution.branchratemodel.ARClockModel.tree'>
   <![CDATA[
-   	<plugin spec='beast.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)' alignment='@$(n)'>
+   	<input spec='arc.evolution.branchratemodel.ARClockModel' id='ARClock.c:$(n)' tree='@Tree.t:$(n)' alignment='@$(n)'>
    	  <parameter name='clock.rate' id='ucldMean.c:$(n)' value='1.0' estimate='false' />
-   	  <rateProbs spec='parameter.RealParameter' id='arcRateProbs.c:$(n)'  dimension='1' value='0.5' estimate='true' />    	
-	  <rateMean spec="parameter.RealParameter"  id='arcRateMean.c:$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
-	  <rateOmega spec="parameter.RealParameter" id='arcRateOmega.c:$(n)' value=".5" lower="0.1" upper="30" estimate='true' /> 
-	</plugin>  
+   	  <rateProbs spec='beast.base.inference.parameter.RealParameter' id='arcRateProbs.c:$(n)'  dimension='1' value='0.5' estimate='true' />    	
+	  <rateMean spec="beast.base.inference.parameter.RealParameter"  id='arcRateMean.c:$(n)' value=".005" lower=".0001" upper="10.0" estimate='true' />
+	  <rateOmega spec="beast.base.inference.parameter.RealParameter" id='arcRateOmega.c:$(n)' value=".5" lower="0.1" upper="30" estimate='true' /> 
+	</input>  
 	
 	<operator id='arcRateMeanScaler.c:$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@arcRateMean.c:$(n)' /> 
 	<operator id='arcRateOmegaScaler.c:$(n)' spec='ScaleOperator' scaleAll='false' scaleFactor="0.75" weight="3" parameter='@arcRateOmega.c:$(n)'/>
@@ -48,14 +37,14 @@
 	
 	
     <prior id="arcRateMeanPrior.c:$(n)"  x="@arcRateMean.c:$(n)">
-		<distr spec="beast.math.distributions.Gamma">
+		<distr spec="beast.base.inference.distribution.Gamma">
 		  <parameter name="alpha" value="0.005 " estimate="false" /> 
 		  <parameter name="beta" value="1.0" estimate="false" />
 		</distr>
 	</prior>
 	    
    <prior id="arcRateOmegaPrior.c:$(n)" x="@arcRateOmega.c:$(n)">
-		<distr spec="beast.math.distributions.Gamma">
+		<distr spec="beast.base.inference.distribution.Gamma">
 			<parameter name="alpha" value="0.1" estimate="false" />
 			<parameter name="beta" value="1.0"  estimate="false" />
 		</distr>
@@ -113,12 +102,11 @@
    <connect srcID='arcRateOmega.c:$(n)' targetID='tracelog' inputName='log'
                      if='inlikelihood(arcRateOmega.c:$(n))'/>
     
-    <!--              
-   <connect srcID='Tree.t:$(n)' targetID='ARClock.c:$(n)' inputName='tree' if='inlikelihood(ARClock.c:$(n))'/>
-     
+    <!-- Annotate the logged trees with the estimated branch rates. Without this
+         the per-branch rates the model exists to estimate never reach the tree
+         file, and cannot be viewed in FigTree or DensiTree. -->
     <connect srcID='ARClock.c:$(n)' targetID='TreeWithMetaDataLogger.t:$(n)' inputName='branchratemodel'
-             if='inposterior(ARClock.c:$(n))'/>        
-    -->          
+             if='inposterior(ARClock.c:$(n))'/>
                      
   
   </subtemplate>
