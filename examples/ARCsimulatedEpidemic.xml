@@ -314,6 +314,7 @@
 		-->
 			<log idref="rateOmega" />
 			<log idref="rateMean" />
+            <log id="rateStat" spec="beast.base.evolution.RateStatistic" tree="@Tree.t:1" branchratemodel="@branchRates"/>
         <log idref="kappa.s:1"/>
         <log idref="mutationRate.s:1"/>
         <log idref="gammaShape.s:1"/>
