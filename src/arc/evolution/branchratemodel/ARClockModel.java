@@ -16,36 +16,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package beast.evolution.branchratemodel;
+package arc.evolution.branchratemodel;
 
 
 
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.ContinuousDistribution;
-import org.apache.commons.math.distribution.GammaDistribution;
 import org.apache.commons.math.distribution.GammaDistributionImpl;
 
-import com.sun.xml.internal.ws.message.MimeAttachmentSet;
-
-import beast.core.Citation;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.parameter.IntegerParameter;
-import beast.core.parameter.RealParameter;
-import beast.core.util.Log;
-import beast.evolution.alignment.Alignment;
-import beast.evolution.alignment.Taxon;
-import beast.evolution.alignment.TaxonSet;
-import beast.evolution.branchratemodel.BranchRateModel.Base;
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
-import beast.math.distributions.LogNormalDistributionModel;
-import beast.math.distributions.LogNormalDistributionModel.LogNormalImpl;
-import beast.math.distributions.ParametricDistribution;
-import beast.util.Randomizer;
+import beast.base.core.Citation;
+import beast.base.core.Description;
+import beast.base.core.Function;
+import beast.base.core.Input;
+import beast.base.core.Log;
+import beast.base.evolution.alignment.Alignment;
+import beast.base.evolution.branchratemodel.BranchRateModel.Base;
+import beast.base.evolution.tree.Node;
+import beast.base.evolution.tree.Tree;
+import beast.base.inference.parameter.IntegerParameter;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.inference.util.InputUtil;
+import beast.base.util.Randomizer;
 
 /**
  * @author Igor Siveroni
@@ -80,7 +72,7 @@ public class ARClockModel extends Base {
     RealParameter ratesMean;
     RealParameter ratesOmega;
 
-    RealParameter meanRate;
+    Function meanRate;
     Tree tree;
     private int branchCount;//the number of branches of the tree
     private int nodeCount;
@@ -481,7 +473,7 @@ public class ARClockModel extends Base {
         
         
         // still don't know the use of this rate
-        if (meanRate.somethingIsDirty()) {
+        if (InputUtil.isDirty(meanRateInput)) {
         	return true;
         }           
         //System.out.println("recompute:"+recompute);
