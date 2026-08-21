@@ -1,3 +1,21 @@
+/*
+ * ARC: Additive uncorrelated Relaxed Clock models for BEAST 2.
+ *
+ * Copyright (C) 2019-2026 Xavier Didelot, Igor Siveroni and Erik Volz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package beast.evolution.branchratemodel;
 
 
@@ -28,7 +46,6 @@ import beast.math.distributions.LogNormalDistributionModel;
 import beast.math.distributions.LogNormalDistributionModel.LogNormalImpl;
 import beast.math.distributions.ParametricDistribution;
 import beast.util.Randomizer;
-import util.DistTest;
 
 /**
  * @author Igor Siveroni
@@ -198,7 +215,6 @@ public class ARClockModel extends Base {
         	branchLengths[i]=-1;
         }
 		//testGamma(0.020132723470917546, 1/ 49.67037874654845 );
-        //DistTest.timeDistributions();
       
 	}
     
