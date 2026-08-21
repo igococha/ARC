@@ -34,6 +34,7 @@ import beast.base.evolution.alignment.Alignment;
 import beast.base.evolution.branchratemodel.BranchRateModel.Base;
 import beast.base.evolution.tree.Node;
 import beast.base.evolution.tree.Tree;
+import beast.base.inference.StateNode;
 import beast.base.inference.parameter.IntegerParameter;
 import beast.base.inference.parameter.RealParameter;
 import beast.base.inference.util.InputUtil;
@@ -182,9 +183,22 @@ public class ARClockModel extends Base {
         }
         
         
-        meanRate = meanRateInput.get();  // from superclass
-        if (meanRate == null) {
-            meanRate = new RealParameter("1.0");
+        // clock.rate, from the superclass. Only a value supplied in the XML counts:
+        // the fallback below is a bare parameter that never enters the State, and it
+        // reports estimate=true purely because that is the Input default.
+        final Function suppliedMeanRate = meanRateInput.get();
+        meanRate = (suppliedMeanRate == null) ? new RealParameter("1.0") : suppliedMeanRate;
+
+        // clock.rate and rateMean are both mean clock rates: a branch rate has mean
+        // clock.rate * rateMean. Estimating both is exactly non-identifiable -- the
+        // chain wanders along the ridge where their product is constant -- so refuse
+        // it rather than silently produce an unusable posterior. Fixing either one
+        // is fine; clock.rate defaults to 1.0, which is the usual choice.
+        if (isEstimated(suppliedMeanRate) && isEstimated(ratesMean)) {
+            throw new IllegalArgumentException(
+                    "ARClockModel: clock.rate and rateMean are both mean clock rates, "
+                  + "so estimating both makes the model non-identifiable. "
+                  + "Fix one of them (clock.rate defaults to 1.0).");
         }
         
         if (ratesMean == null) {
@@ -213,7 +227,7 @@ public class ARClockModel extends Base {
  
 	
 
-	//get the rate for node: R = r*scale*meanRate
+	/** Branch rate R = r * clock.rate, where r is the ARC-distributed rate. */
 	@Override
 	public double getRateForBranch(Node node) {
 		//startTime();
@@ -233,9 +247,14 @@ public class ARClockModel extends Base {
 		double r = rates[getNr(node)];
 		//System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
 		//endTime(false);
-        return r;	
-     
+        return r * meanRate.getArrayValue();
+
 	}
+
+    /** True if f was supplied in the XML as a state node the MCMC is sampling. */
+    private static boolean isEstimated(Function f) {
+        return (f instanceof StateNode) && ((StateNode) f).isEstimatedInput.get();
+    }
 	
 	
 	private void calculateUnscaledBranchRates() {
