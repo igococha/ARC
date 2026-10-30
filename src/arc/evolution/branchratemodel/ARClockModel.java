@@ -1,44 +1,59 @@
-package beast.evolution.branchratemodel;
+/*
+ * ARC: Additive uncorrelated Relaxed Clock models for BEAST 2.
+ *
+ * Copyright (C) 2019-2026 Xavier Didelot, Igor Siveroni and Erik Volz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package arc.evolution.branchratemodel;
 
 
 
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.ContinuousDistribution;
-import org.apache.commons.math.distribution.GammaDistribution;
 import org.apache.commons.math.distribution.GammaDistributionImpl;
 
-import com.sun.xml.internal.ws.message.MimeAttachmentSet;
-
-import beast.core.Citation;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.parameter.IntegerParameter;
-import beast.core.parameter.RealParameter;
-import beast.core.util.Log;
-import beast.evolution.alignment.Alignment;
-import beast.evolution.alignment.Taxon;
-import beast.evolution.alignment.TaxonSet;
-import beast.evolution.branchratemodel.BranchRateModel.Base;
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
-import beast.math.distributions.LogNormalDistributionModel;
-import beast.math.distributions.LogNormalDistributionModel.LogNormalImpl;
-import beast.math.distributions.ParametricDistribution;
-import beast.util.Randomizer;
-import util.DistTest;
+import beast.base.core.Citation;
+import beast.base.core.Description;
+import beast.base.core.Function;
+import beast.base.core.Input;
+import beast.base.core.Log;
+import beast.base.evolution.alignment.Alignment;
+import beast.base.evolution.branchratemodel.BranchRateModel.Base;
+import beast.base.evolution.tree.Node;
+import beast.base.evolution.tree.Tree;
+import beast.base.inference.StateNode;
+import beast.base.inference.parameter.IntegerParameter;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.inference.util.InputUtil;
+import beast.base.util.Randomizer;
 
 /**
  * @author Igor Siveroni
  */
 
-@Description("Implements ARC: th Additive Uncorrelated Ralexed Clock Model")
+@Description("Additive uncorrelated relaxed clock (ARC). The rate of a branch of duration t "
+        + "is Gamma distributed with mean rateMean and variance rateMean*rateOmega/t, so the "
+        + "variance of the number of substitutions along a branch grows linearly with its "
+        + "duration. That additivity makes the clock consistent under subdivision of a branch.")
 @Citation(value =
-        "Didelot X and Volz EM (2019) Additive uncorrelated  relaxed clock models\n" +
-                "  for the dating of epidemiological models.", DOI = "TBC",
-        year = 2019, firstAuthorSurname = "Didelot")
+        "Didelot X, Siveroni I, Volz EM (2021) Additive Uncorrelated Relaxed Clock Models\n" +
+        "  for the Dating of Genomic Epidemiology Phylogenies.\n" +
+        "  Molecular Biology and Evolution 38(1):307-317.",
+        DOI = "10.1093/molbev/msaa193",
+        year = 2021, firstAuthorSurname = "Didelot")
 
 public class ARClockModel extends Base {
 
@@ -63,7 +78,7 @@ public class ARClockModel extends Base {
     RealParameter ratesMean;
     RealParameter ratesOmega;
 
-    RealParameter meanRate;
+    Function meanRate;
     Tree tree;
     private int branchCount;//the number of branches of the tree
     private int nodeCount;
@@ -97,31 +112,24 @@ public class ARClockModel extends Base {
 		} else {
 			throw new IllegalArgumentException("Input error: Must use rateCategories or rateProbs");
 		}
-        
-				
-		//TaxonSet taxa = tree.getTaxonset();	
-		//List<Taxon> lt = taxa.taxonsetInput.get();
-		//if (lt==null) System.out.println("lsyt if taxon null");
-		//else System.out.println("list lengh = "+lt.size());
 		
-		//Alignment alignment = taxa.alignmentInput.get();
-		//if (alignment==null) {
-		//	System.out.println("Alignment is NULL");
-		//} else {
-		//int count = alignment.getSiteCount();
-		//System.out.println("------------------ Counts sites = "+count );
-		//}
-		
-		numSites = 1;
 		if (alignmentInput.get() != null) {
 			numSites = alignmentInput.get().getSiteCount();
-			if (numSitesInput.get()!=null) {
-				Log.warning("ARC warning: specify either alignment of numberOfSites. Using alignment info");
-			}	
-		} else if (numSitesInput.get()!=null){
+			if (numSitesInput.get() != null) {
+				Log.warning.println("ARClockModel: both alignment and numSites given; using the alignment (" + numSites + " sites).");
+			}
+		} else if (numSitesInput.get() != null) {
 			numSites = numSitesInput.get();
 		} else {
+			// Not a benign default. numSites enters the Gamma shape as
+			// rateMean*l*numSites/rateOmega, so with numSites=1 the shape is
+			// typically far below 1 and the rate distribution degenerates into a
+			// spike at zero with a very long tail, which can drive the likelihood
+			// to NaN.
 			numSites = 1;
+			Log.warning.println("ARClockModel: WARNING neither alignment nor numSites was given, so numSites "
+					+ "defaults to 1. This is very probably not what you want: it changes the model, and can "
+					+ "make the likelihood degenerate. Supply the alignment, or set numSites to the sequence length.");
 		}
 		
 		
@@ -142,7 +150,7 @@ public class ARClockModel extends Base {
             }
             Log.info.println("ARClockModel: using rate probs as parameter for sampling across branches.");          
         }
-        Log.info.println("Number of sites = "+numSites);
+        Log.info.println("ARClockModel: " + numSites + " sites.");
         
         //initialize rates in both types of inputs
         if (useCategories) {       	
@@ -163,7 +171,6 @@ public class ARClockModel extends Base {
         		Double [] initialProbs = new Double[branchCount];
         		for (int i = 0; i < branchCount; i++) {
         			initialProbs[i] = Randomizer.nextDouble();  // [0,1)
-        			//System.out.println("p_i="+initialProbs[i]);
         		}
         		RealParameter other = new RealParameter(initialProbs);
         		rateProbs.assignFromWithoutID(other);
@@ -173,20 +180,23 @@ public class ARClockModel extends Base {
         }
         
         
-        meanRate = meanRateInput.get();  // from superclass
-        if (meanRate == null) {
-            meanRate = new RealParameter("1.0");
+        // clock.rate, from the superclass. Only a value supplied in the XML counts:
+        // the fallback below is a bare parameter that never enters the State, and it
+        // reports estimate=true purely because that is the Input default.
+        final Function suppliedMeanRate = meanRateInput.get();
+        meanRate = (suppliedMeanRate == null) ? new RealParameter("1.0") : suppliedMeanRate;
+
+        // clock.rate and rateMean are both mean clock rates: a branch rate has mean
+        // clock.rate * rateMean. Estimating both is exactly non-identifiable -- the
+        // chain wanders along the ridge where their product is constant -- so refuse
+        // it rather than silently produce an unusable posterior. Fixing either one
+        // is fine; clock.rate defaults to 1.0, which is the usual choice.
+        if (isEstimated(suppliedMeanRate) && isEstimated(ratesMean)) {
+            throw new IllegalArgumentException(
+                    "ARClockModel: clock.rate and rateMean are both mean clock rates, "
+                  + "so estimating both makes the model non-identifiable. "
+                  + "Fix one of them (clock.rate defaults to 1.0).");
         }
-        
-        if (ratesMean == null) {
-        	Log.warning.println("rateMean is null");
-        } else {
-        	Log.warning.println("rateMean :"+ratesMean.getValue());
-        }
-        
-        //if (Math.abs(ratesMean.getValue()-1.0) > 1e-6 ) { // igor: should this be ONE in ARC's case?
-        //	Log.warning.println("WARNING: mean of distribution for additive relaxed clock model is not 1.0.");
-        //}
        
         // new
         // unscaledBranchRates = new double[tree.getNodeCount()];
@@ -198,17 +208,15 @@ public class ARClockModel extends Base {
         	branchLengths[i]=-1;
         }
 		//testGamma(0.020132723470917546, 1/ 49.67037874654845 );
-        //DistTest.timeDistributions();
       
 	}
     
  
 	
 
-	//get the rate for node: R = r*scale*meanRate
+	/** Branch rate R = r * clock.rate, where r is the ARC-distributed rate. */
 	@Override
 	public double getRateForBranch(Node node) {
-		//startTime();
 		
 		if (node.isRoot()) {
 			//endTime(false);
@@ -223,17 +231,18 @@ public class ARClockModel extends Base {
 			}
         }
 		double r = rates[getNr(node)];
-		//System.out.println("rate = "+r+" nr="+node.getNr()+"  newNr="+getNr(node));
 		//endTime(false);
-        return r;	
-     
+        return r * meanRate.getArrayValue();
+
 	}
+
+    /** True if f was supplied in the XML as a state node the MCMC is sampling. */
+    private static boolean isEstimated(Function f) {
+        return (f instanceof StateNode) && ((StateNode) f).isEstimatedInput.get();
+    }
 	
 	
 	private void calculateUnscaledBranchRates() {
-		//System.out.println("recalculate branch rates");
-		//debugState();
-		//debugTree();
 		if (this.useCategories) {
 			calculateRatesForCategories();
 		} else {
@@ -241,36 +250,7 @@ public class ARClockModel extends Base {
 		}
 	}
     
-	void debugState() {
-		//System.out.println(tree.getRoot().getNr()+ " =? " + (this.nodeCount-1));
-		if (tree.getRoot().getNr() != (nodeCount-1)) {
-			System.out.println("Root Swap!!");
-		}
-		if (this.useCategories) {
-			Integer[] vs = categories.getValues();
-			//System.out.println("array size = "+vs.length+ " num branches="+branchCount);
-			System.out.print("Cs = ");
-			for(int i=0; i < vs.length; i++) {
-				System.out.print(vs[i]+" ");
-			}
-			System.out.println(" ");
-		} else {
-			Double[] vs = rateProbs.getValues();
-			System.out.print("Ps = ");
-			for(int i=0; i < vs.length; i++) {
-				System.out.print(vs[i]+" ");
-			}
-			System.out.println(" ");
-		}
-	}
 	
-	void debugTree() {
-		for(int i=0; i < tree.getNodeCount();i++) {
-    		final Node node = tree.getNode(i);
-    		System.out.print(node.getNr()+"/"+String.format("%.3f", node.getLength())+" ");
-		}
-		System.out.println("");
-	}
     
 	
 	// includes all optimisations in a single function
@@ -295,7 +275,6 @@ public class ARClockModel extends Base {
     				if (!isDiff) {
     					continue;
     				}
-    				//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
     			}
     			
     			  			
@@ -309,7 +288,6 @@ public class ARClockModel extends Base {
     			
     			branchLengths[node.getNr()] = l;
     			
-    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
     			try {
     				rate = gammaDist.inverseCumulativeProbability( p ) / numSites;
     			} catch (MathException e) {
@@ -319,7 +297,6 @@ public class ARClockModel extends Base {
     		} else {  // node is root
     			branchLengths[node.getNr()] = node.getLength(); 
     		}
-    		// System.out.println(" rate = "+rate);
     	}
     	samplingOnly=false;
     	treeOnly = false;
@@ -346,7 +323,6 @@ public class ARClockModel extends Base {
     				if (!isDiff) {
     					continue;
     				}
-    				//System.out.println("nr = "+nr+" l ="+l+" "+branchLengths[node.getNr()]);   				
     			}    			   			  			
     			
     			final double p = rateProbs.getValue(nr);
@@ -358,7 +334,6 @@ public class ARClockModel extends Base {
     			
     			branchLengths[node.getNr()] = l;
     			
-    			//System.out.println("k = "+k+ " theta="+theta+"  p="+p);
     			try {
     				rate = gammaDist.inverseCumulativeProbability( p ) / numSites;
     			} catch (MathException e) {
@@ -368,7 +343,6 @@ public class ARClockModel extends Base {
     		} else {  // node is root
     			branchLengths[node.getNr()] = node.getLength(); 
     		}
-    		// System.out.println(" rate = "+rate);
     	}
     	samplingOnly=false;
     	treeOnly = false;
@@ -377,13 +351,11 @@ public class ARClockModel extends Base {
     }
     
     
-   private  void inverseCumError(MathException e, double k, double theta, double p) {
-	   System.out.println("Problems computing Gamma Inverse Cumm. Prob. :");
-	   System.out.println("mu = "+ratesMean.getValue());
-	   System.out.println("omega = "+ratesOmega.getValue());
-	   System.out.println("kappa ="+k+"  theta = "+theta);
-	   System.out.println("p = "+p);
-	   throw new RuntimeException("Failed to compute inverse cumulative probability");
+   private void inverseCumError(MathException e, double k, double theta, double p) {
+	   throw new RuntimeException("ARClockModel: failed to compute the Gamma inverse cumulative probability"
+			   + " (rateMean=" + ratesMean.getValue()
+			   + ", rateOmega=" + ratesOmega.getValue()
+			   + ", shape=" + k + ", scale=" + theta + ", p=" + p + ")", e);
    }
     
 	
@@ -392,21 +364,12 @@ public class ARClockModel extends Base {
     private int getNr(Node node) {
         int nodeNr = node.getNr();
         if (nodeNr > tree.getRoot().getNr()) {
-        	System.out.println("-- root swap");
+            // the root is not the highest numbered node, so shift down to keep
+            // rates[] densely indexed over branches
             nodeNr--;
         }
         return nodeNr;
         
-    }
-
-    // indexing used by UCRelaxedClock
-    private int getNr2(Node node) {
-    	int nodeNr = node.getNr();
-        if (nodeNr == branchCount) { // this should be root if no swap has happened
-            // root node has nr less than #categories, so use that nr
-            nodeNr = node.getTree().getRoot().getNr();
-        }
-        return nodeNr;
     }
     
     // Come back when parameters have settled - so far, recompute always
@@ -416,9 +379,7 @@ public class ARClockModel extends Base {
         samplingOnly=true;
         
         treeOnly= true;
-        //System.out.println("calling requires recalculation");
         if (treeInput.get().somethingIsDirty()) {
-        	//System.out.println("tree changes");
         	samplingOnly=false;
         	recompute = true;
         	//return true;
@@ -426,23 +387,19 @@ public class ARClockModel extends Base {
         
         // changed from isDirtyCalculation based on ratesOmegaInput feedback
         if (ratesMeanInput.get().somethingIsDirty()) {
-        	//System.out.println("Gamma mu changes");
         	samplingOnly=false;
         	treeOnly=false;
         	recompute = true;
         	//return true;
         }
      
-        //System.out.println("omega="+ratesOmegaInput.get().getArrayValue());
         
         //if (ratesOmegaInput.get().isDirty(0)) {
-        //	System.out.println("------ omega isDIRTY!!!");
         //}
         
         // isDirtyCalculation did not report changes ratesOmegaInput
         // somethingIsDirty seems to over-report them
         if (ratesOmegaInput.get().somethingIsDirty()) {
-        	//System.out.println("Gamma omega changes");
         	samplingOnly=false;
         	treeOnly=false;
         	recompute = true;
@@ -451,7 +408,6 @@ public class ARClockModel extends Base {
      
         if (useCategories) {
         	if ( categoryInput.get().somethingIsDirty() ) {
-        		//System.out.println("category changes");
             	treeOnly=false;
             	recompute = true;  // come back to this
             	//return true;
@@ -465,10 +421,9 @@ public class ARClockModel extends Base {
         
         
         // still don't know the use of this rate
-        if (meanRate.somethingIsDirty()) {
+        if (InputUtil.isDirty(meanRateInput)) {
         	return true;
         }           
-        //System.out.println("recompute:"+recompute);
         return recompute;
     }
     
@@ -477,12 +432,10 @@ public class ARClockModel extends Base {
     	System.arraycopy(rates, 0, storedRates, 0, rates.length);
     	System.arraycopy(branchLengths, 0, storedBranchLengths, 0, branchLengths.length);
         super.store();
-        // System.out.println("num calls="+numCalls+"  duration="+duration);
     }
 
     @Override
     public void restore() {
-    	//System.out.println("--- restore ARC");
     	double[] tmp = rates;
         rates = storedRates;
         storedRates = tmp;

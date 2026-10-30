@@ -1,28 +1,32 @@
-# Exclude bin,build,build-lib and .metadata directories
+# Build output
 bin
 build
 build-lib
+build-test
+build-beast
+beast-source
+beastfx-source
+dist
+release
+test-reports
+
+# IDE
 .metadata
 .classpath
 .project
+.settings
+.idea
+*.iml
 
-# Beast generated files
-#*.log
-#*.state
+# BEAST generated files
 *.trees
 *.tree
 *.traj
+*.state
 
-# OS X systems
+# OS
 .DS_Store
 ._*
 
-# Emacs temporary files
+# Editor temporary files
 *~
-
-# latex temporary
-latex/*.aux
-latex/*.log
-latex/*.gz
-
-/bin1/
